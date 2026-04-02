@@ -6,11 +6,24 @@ import Projects from "@/components/Projects";
 import Resume from "@/components/Resume";
 import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
+import PageLoader from "@/components/PageLoader";
+import { HeroSkeleton, AboutSkeleton, SkillsSkeleton, ProjectsSkeleton, ResumeSkeleton, ContactSkeleton } from "@/components/Skeletons";
 
-const Index = () => {
-  return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
+const IndexSkeleton = () => (
+  <>
+    <HeroSkeleton />
+    <AboutSkeleton />
+    <SkillsSkeleton />
+    <ProjectsSkeleton />
+    <ResumeSkeleton />
+    <ContactSkeleton />
+  </>
+);
+
+const Index = () => (
+  <div className="min-h-screen bg-background">
+    <Navbar />
+    <PageLoader skeleton={<IndexSkeleton />}>
       <Hero />
       <About />
       <Skills />
@@ -18,8 +31,8 @@ const Index = () => {
       <Resume />
       <Contact />
       <Footer />
-    </div>
-  );
-};
+    </PageLoader>
+  </div>
+);
 
 export default Index;

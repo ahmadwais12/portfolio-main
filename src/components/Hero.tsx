@@ -1,12 +1,37 @@
-import { motion } from "framer-motion";
-import { ArrowDown, Github, Linkedin, Mail } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Github, Linkedin, Mail, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import profile from '../../public/profile.jpg';
+import { useState, useEffect } from "react";
+import { getAbout } from "@/lib/store";
+
+const TextSlider = ({ titles }: { titles: string[] }) => {
+  const [index, setIndex] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setIndex(i => (i + 1) % titles.length), 2500);
+    return () => clearInterval(t);
+  }, [titles.length]);
+  return (
+    <AnimatePresence mode="wait">
+      <motion.span
+        key={index}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -20 }}
+        transition={{ duration: 0.4 }}
+        className="bg-gradient-to-r from-primary via-secondary to-primary bg-[length:300%_auto] bg-clip-text text-transparent font-bold block"
+      >
+        {titles[index]}
+      </motion.span>
+    </AnimatePresence>
+  );
+};
 
 const Hero = () => {
+  const about = getAbout();
+  const titles = about.title ? [about.title] : ["Developer"];
   const scrollToSection = (id: string) => {
-    const element = document.getElementById(id);
-    element?.scrollIntoView({ behavior: "smooth" });
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
   };
 
   return (
@@ -49,7 +74,7 @@ const Hero = () => {
                 <img
                 src={profile}
                   //src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500&h=500&fit=crop"
-                  alt="Ahmad Wais Sarwari"
+                  alt={about.full_name}
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                 />
                 
@@ -73,7 +98,7 @@ const Hero = () => {
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground mb-4">
                 Hi, I'm{" "}
                 <span className="bg-gradient-primary bg-clip-text text-transparent">
-                  Ahmad Wais
+                  {about.full_name.split(' ').slice(0, 2).join(' ')}
                 </span>
               </h1>
             </motion.div>
@@ -82,17 +107,9 @@ const Hero = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="text-2xl md:text-3xl text-muted-foreground mb-6"
+              className="text-2xl md:text-3xl text-muted-foreground mb-6 h-10 overflow-hidden"
             >
-              <motion.span
-                animate={{ 
-                  backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
-                }}
-                transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-                className="bg-gradient-to-r from-primary via-secondary via-accent to-primary bg-[length:300%_auto] bg-clip-text text-transparent font-bold"
-              >
-                Full Stack Web & Mobile App Developer
-              </motion.span>
+              <TextSlider titles={titles} />
             </motion.div>
 
             <motion.p
@@ -101,7 +118,7 @@ const Hero = () => {
               transition={{ duration: 0.6, delay: 0.4 }}
               className="text-base md:text-lg text-muted-foreground mb-8"
             >
-              Crafting beautiful web experiences with MERN Stack and building powerful mobile apps with Flutter
+              Crafting digital experiences with {about.title || 'modern technologies'}
             </motion.p>
 
             <motion.div
@@ -139,59 +156,39 @@ const Hero = () => {
               transition={{ duration: 0.6, delay: 0.8 }}
               className="flex gap-4 justify-center md:justify-start"
             >
-              <motion.a
-                whileHover={{ scale: 1.15, rotate: 5, y: -5 }}
-                whileTap={{ scale: 0.95 }}
-                href="https://github.com"
-                target="_blank"
-                rel="noopener noreferrer"
+              <motion.a whileHover={{ scale: 1.15, rotate: 5, y: -5 }} whileTap={{ scale: 0.95 }}
+                href={about.social_links.github} target="_blank" rel="noopener noreferrer"
                 className="p-4 rounded-full glass-card hover:shadow-glow transition-all group relative overflow-hidden"
               >
                 <Github className="w-6 h-6 relative z-10 group-hover:text-primary transition-colors" />
                 <div className="absolute inset-0 bg-gradient-primary opacity-0 group-hover:opacity-20 transition-opacity duration-300" />
               </motion.a>
-              <motion.a
-                whileHover={{ scale: 1.15, rotate: -5, y: -5 }}
-                whileTap={{ scale: 0.95 }}
-                href="https://linkedin.com"
-                target="_blank"
-                rel="noopener noreferrer"
+              <motion.a whileHover={{ scale: 1.15, rotate: -5, y: -5 }} whileTap={{ scale: 0.95 }}
+                href={about.social_links.linkedin} target="_blank" rel="noopener noreferrer"
                 className="p-4 rounded-full glass-card hover:shadow-glow transition-all group relative overflow-hidden"
               >
                 <Linkedin className="w-6 h-6 relative z-10 group-hover:text-primary transition-colors" />
                 <div className="absolute inset-0 bg-gradient-primary opacity-0 group-hover:opacity-20 transition-opacity duration-300" />
               </motion.a>
-              <motion.a
-                whileHover={{ scale: 1.15, rotate: 5, y: -5 }}
-                whileTap={{ scale: 0.95 }}
-                href="mailto:ahmadwaissarwari@gmail.com"
+              <motion.a whileHover={{ scale: 1.15, rotate: 5, y: -5 }} whileTap={{ scale: 0.95 }}
+                href={`mailto:${about.email}`}
                 className="p-4 rounded-full glass-card hover:shadow-glow transition-all group relative overflow-hidden"
               >
-                <Mail className="w-6 h-6 relative z-10 group-hover:text-accent transition-colors" />
+                <Mail className="w-6 h-6 relative z-10 group-hover:text-primary transition-colors" />
                 <div className="absolute inset-0 bg-gradient-secondary opacity-0 group-hover:opacity-20 transition-opacity duration-300" />
+              </motion.a>
+              <motion.a whileHover={{ scale: 1.15, rotate: -5, y: -5 }} whileTap={{ scale: 0.95 }}
+                href={about.social_links.whatsapp} target="_blank" rel="noopener noreferrer"
+                className="p-4 rounded-full glass-card hover:shadow-glow transition-all group relative overflow-hidden"
+              >
+                <MessageCircle className="w-6 h-6 relative z-10 group-hover:text-primary transition-colors" />
+                <div className="absolute inset-0 bg-gradient-primary opacity-0 group-hover:opacity-20 transition-opacity duration-300" />
               </motion.a>
             </motion.div>
           </div>
         </div>
       </div>
 
-      {/* Scroll Indicator */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.6, delay: 1 }}
-        className="absolute bottom-8 left-1/2 -translate-x-1/2 cursor-pointer"
-        onClick={() => scrollToSection("about")}
-      >
-        <motion.div
-          animate={{ y: [0, 10, 0] }}
-          transition={{ duration: 2, repeat: Infinity }}
-          className="flex flex-col items-center gap-2"
-        >
-          <span className="text-sm text-muted-foreground">Scroll Down</span>
-          <ArrowDown className="w-6 h-6 text-primary animate-glow" />
-        </motion.div>
-      </motion.div>
     </section>
   );
 };

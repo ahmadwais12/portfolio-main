@@ -1,164 +1,157 @@
-import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import { Menu, X, Moon, Sun } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useTheme } from "next-themes";
+import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { Menu, Moon, Sun, X } from "lucide-react";
+import { useTheme } from "next-themes";
+
+import { Button } from "@/components/ui/button";
+import { getAbout } from "@/lib/store";
+
+type NavItem = {
+  name: string;
+  path: string;
+};
+
+const navItems: NavItem[] = [
+  { name: "Home", path: "/" },
+  { name: "About", path: "/about" },
+  { name: "Skills", path: "/skills" },
+  { name: "Services", path: "/services" },
+  { name: "Projects", path: "/projects" },
+  { name: "Resume", path: "/resume" },
+  { name: "Testimonials", path: "/testimonials" },
+  { name: "Contact", path: "/contact" },
+];
 
 const Navbar = () => {
+  const about = getAbout();
+  const location = useLocation();
+  const { theme, setTheme } = useTheme();
+
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const { theme, setTheme } = useTheme();
-  const location = useLocation();
 
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 50);
     };
+
     window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
   }, []);
 
-  const navItems = [
-    { name: "Home", path: "/" },
-    { name: "About", path: "/about" },
-    { name: "Skills", path: "/skills" },
-    { name: "Services", path: "/services" },
-    { name: "Projects", path: "/projects" },
-    { name: "Resume", path: "/resume" },
-    { name: "Testimonials", path: "/testimonials" },
-    { name: "Contact", path: "/contact" },
-  ];
+  const toggleTheme = () => {
+    setTheme(theme === "dark" ? "light" : "dark");
+  };
+
+  const isActivePath = (path: string) => location.pathname === path;
 
   return (
-    <motion.nav
-      initial={{ y: -100 }}
-      animate={{ y: 0 }}
-      transition={{ duration: 0.6 }}
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled
-          ? "backdrop-blur-lg border-b border-border shadow-lg bg-transparent"
-          : "bg-transparent"
-      }`}
-    >
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16 md:h-20">
-          {/* Logo */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-            className="flex items-center"
-          >
-            <Link to="/" className="text-2xl md:text-3xl font-bold">
-              <span className="bg-gradient-primary bg-clip-text text-transparent">
-                Ahmad Wais Sarwari
+    <nav className="fixed left-0 right-0 top-0 z-50 px-4 pt-3">
+      <div
+        className={`relative mx-auto max-w-7xl rounded-2xl ${
+          scrolled ? "backdrop-blur-md shadow-lg" : "backdrop-blur-sm"
+        }`}
+      >
+        <div
+          className={`absolute bottom-0 left-4 right-4 h-[2px] rounded-full ${
+            scrolled ? "bg-primary/60" : "bg-primary/25"
+          }`}
+        />
+
+        <div className="container mx-auto px-4">
+          <div className="flex h-14 items-center justify-between md:h-16">
+            <Link to="/" className="group flex items-center gap-3">
+              <div className="relative">
+                <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-primary to-secondary opacity-40 blur-sm" />
+                <img
+                  src="/logo.png"
+                  alt="Logo"
+                  className="relative h-10 w-10 rounded-xl object-cover ring-2 ring-primary/30"
+                />
+              </div>
+
+              <span className="bg-gradient-primary bg-clip-text text-xl font-bold tracking-tight text-transparent md:text-2xl">
+                {about.full_name}
               </span>
             </Link>
-          </motion.div>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-1">
-            {navItems.map((item, index) => (
-              <motion.div
-                key={item.path}
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 * index }}
-              >
-                <Link to={item.path}>
-                  <Button
-                    variant="ghost"
-                    className={`text-foreground hover:text-primary hover:bg-transparent transition-colors relative ${
-                      location.pathname === item.path ? "text-primary font-semibold" : ""
-                    }`}
-                  >
-                    <span className="relative z-10">{item.name}</span>
-                    {location.pathname === item.path && (
-                      <motion.div
-                        layoutId="navbar-indicator"
-                        className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"
-                        initial={false}
-                        transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                      />
-                    )}
-                  </Button>
-                </Link>
-              </motion.div>
-            ))}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="ml-2"
-            >
-              {theme === "dark" ? (
-                <Sun className="h-5 w-5" />
-              ) : (
-                <Moon className="h-5 w-5" />
-              )}
-            </Button>
-          </div>
-
-          {/* Mobile Menu Button */}
-          <div className="md:hidden flex items-center space-x-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className=""
-            >
-              {theme === "dark" ? (
-                <Sun className="h-5 w-5" />
-              ) : (
-                <Moon className="h-5 w-5" />
-              )}
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsOpen(!isOpen)}
-              className=""
-            >
-              {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-            </Button>
-          </div>
-        </div>
-
-        {/* Mobile Navigation */}
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            className="md:hidden pb-4 bg-transparent"
-          >
-            <div className="flex flex-col space-y-2">
+            <div className="hidden items-center gap-1 md:flex">
               {navItems.map((item) => (
-                <Link key={item.path} to={item.path} onClick={() => setIsOpen(false)}>
-                  <Button
-                    variant="ghost"
-                    className={`text-foreground hover:text-primary hover:bg-transparent justify-start w-full ${
-                      location.pathname === item.path ? "text-primary font-semibold" : ""
-                    }`}
-                  >
-                    <span className="relative z-10">{item.name}</span>
-                    {location.pathname === item.path && (
-                      <motion.div
-                        layoutId="mobile-navbar-indicator"
-                        className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"
-                        initial={false}
-                        transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                      />
+                <Link key={item.path} to={item.path}>
+                  <div className="relative overflow-hidden rounded-lg px-3 py-1.5">
+                    {isActivePath(item.path) && (
+                      <div className="absolute bottom-0 left-2 right-2 h-[2px] rounded-full bg-primary" />
                     )}
-                  </Button>
+
+                    <span
+                      className={`relative z-10 text-sm font-medium ${
+                        isActivePath(item.path) ? "text-primary" : "text-foreground/70 hover:text-primary"
+                      }`}
+                    >
+                      {item.name}
+                    </span>
+                  </div>
                 </Link>
               ))}
+
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleTheme}
+                className="ml-2 rounded-full border border-border/50 text-foreground/70 transition-none hover:border-primary/50 hover:bg-transparent hover:text-primary active:bg-transparent focus:bg-transparent"
+              >
+                {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              </Button>
             </div>
-          </motion.div>
-        )}
+
+            <div className="flex items-center gap-2 md:hidden">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleTheme}
+                className="rounded-full border border-border/50 text-foreground/70 transition-none hover:border-primary/50 hover:bg-transparent hover:text-primary active:bg-transparent focus:bg-transparent"
+              >
+                {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsOpen((prev) => !prev)}
+                className="rounded-full border border-border/50 text-foreground/70 transition-none hover:border-primary/50 hover:bg-transparent hover:text-primary active:bg-transparent focus:bg-transparent"
+              >
+                {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              </Button>
+            </div>
+          </div>
+
+          {isOpen && (
+            <div className="px-4 md:hidden">
+              <div className="flex flex-col gap-1 pb-4 pt-2">
+                {navItems.map((item) => (
+                  <Link key={item.path} to={item.path} onClick={() => setIsOpen(false)}>
+                    <div
+                      className={`flex items-center gap-3 rounded-xl px-4 py-2.5 ${
+                        isActivePath(item.path)
+                          ? "rounded-b-none border-b-2 border-primary/50 text-primary"
+                          : "text-foreground/70 hover:text-primary"
+                      }`}
+                    >
+                      <span className="text-sm font-medium">{item.name}</span>
+                      {isActivePath(item.path) && (
+                        <div className="ml-auto h-1.5 w-1.5 rounded-full bg-primary" />
+                      )}
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
-    </motion.nav>
+    </nav>
   );
 };
 

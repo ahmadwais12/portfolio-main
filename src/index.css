@@ -9,13 +9,13 @@ All colors MUST be HSL.
 @layer base {
   :root {
     --background: 220 20% 97%;
-    --foreground: 220 20% 10%;
+    --foreground: 0 0% 0%;
 
     --card: 0 0% 100%;
-    --card-foreground: 220 20% 10%;
+    --card-foreground: 0 0% 0%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 20% 10%;
+    --popover-foreground: 0 0% 0%;
 
     --primary: 190 100% 50%;
     --primary-foreground: 0 0% 100%;
@@ -23,8 +23,8 @@ All colors MUST be HSL.
     --secondary: 270 100% 65%;
     --secondary-foreground: 0 0% 100%;
 
-    --accent: 310 80% 60%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 210 30% 88%;
+    --accent-foreground: 0 0% 0%;
 
     --muted: 220 20% 90%;
     --muted-foreground: 220 10% 40%;
@@ -40,12 +40,12 @@ All colors MUST be HSL.
 
     /* Enhanced gradients */
     --gradient-primary: linear-gradient(135deg, hsl(190, 100%, 50%), hsl(270, 100%, 65%));
-    --gradient-secondary: linear-gradient(135deg, hsl(310, 80%, 60%), hsl(190, 100%, 50%));
+    --gradient-secondary: linear-gradient(135deg, hsl(270, 100%, 65%), hsl(190, 100%, 50%));
     --gradient-hero: linear-gradient(135deg, hsl(220, 30%, 10%) 0%, hsl(270, 50%, 20%) 50%, hsl(190, 50%, 15%) 100%);
     --gradient-card: linear-gradient(135deg, hsla(220, 30%, 98%, 0.8), hsla(270, 30%, 98%, 0.6));
     --gradient-mesh: radial-gradient(at 0% 0%, hsl(190, 100%, 50%) 0px, transparent 50%),
                      radial-gradient(at 100% 0%, hsl(270, 100%, 65%) 0px, transparent 50%),
-                     radial-gradient(at 100% 100%, hsl(310, 80%, 60%) 0px, transparent 50%),
+                     radial-gradient(at 100% 100%, hsl(270, 100%, 65%) 0px, transparent 50%),
                      radial-gradient(at 0% 100%, hsl(190, 80%, 60%) 0px, transparent 50%);
 
     /* Glass morphism */
@@ -80,8 +80,8 @@ All colors MUST be HSL.
     --secondary: 270 100% 65%;
     --secondary-foreground: 0 0% 100%;
 
-    --accent: 310 80% 60%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 220 20% 22%;
+    --accent-foreground: 0 0% 98%;
 
     --muted: 220 20% 18%;
     --muted-foreground: 220 10% 60%;
@@ -112,6 +112,16 @@ All colors MUST be HSL.
 }
 
 @layer utilities {
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+  .preserve-3d {
+    transform-style: preserve-3d;
+  }
+  .backface-hidden {
+    backface-visibility: hidden;
+  }
+
   .glass-card {
     background: var(--glass-bg);
     backdrop-filter: blur(12px);

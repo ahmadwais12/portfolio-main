@@ -1,21 +1,20 @@
-import { motion } from "framer-motion";
-import { useInView } from "framer-motion";
+import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
 import { MapPin, Calendar, Code, Award } from "lucide-react";
 import { Card } from "@/components/ui/card";
-
+import { getAbout } from "@/lib/store";
 import profile from '../../public/profile.jpg';
-
 
 const About = () => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
+  const data = getAbout();
 
   const stats = [
-    { icon: Calendar, label: "Years Experience", value: "5+" },
-    { icon: Code, label: "Projects Completed", value: "50+" },
-    { icon: Award, label: "Technologies", value: "15+" },
-    { icon: MapPin, label: "Location", value: "Afghanistan" },
+    { icon: Calendar, label: "Years Experience", value: data.years_experience },
+    { icon: Code, label: "Projects Completed", value: data.projects_completed },
+    { icon: Award, label: "Technologies", value: data.technologies },
+    { icon: MapPin, label: "Location", value: data.location },
   ];
 
   return (
@@ -36,7 +35,6 @@ const About = () => {
         </motion.div>
 
         <div className="grid md:grid-cols-2 gap-12 items-center max-w-6xl mx-auto">
-          {/* Image */}
           <motion.div
             initial={{ opacity: 0, x: -50 }}
             animate={isInView ? { opacity: 1, x: 0 } : {}}
@@ -44,30 +42,17 @@ const About = () => {
             className="relative"
           >
             <div className="relative w-full aspect-square max-w-md mx-auto group">
-              {/* Enhanced glow effects */}
               <div className="absolute inset-0 bg-gradient-primary rounded-2xl blur-3xl opacity-30 animate-glow" />
               <div className="absolute inset-0 bg-gradient-secondary rounded-2xl blur-2xl opacity-20 animate-pulse-slow" />
-              
-              {/* Image with glass morphism */}
               <div className="relative w-full h-full rounded-2xl overflow-hidden border-4 border-primary/20 shadow-glow-lg glass-card group-hover:border-primary/40 transition-all duration-500 hover-lift">
-                <img
-                 src={profile}
-                 // src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500&h=500&fit=crop"
-                  alt="Ahmad Wais Sarwari"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                />
-                
-                {/* Overlay gradient */}
+                <img src={profile} alt={data.full_name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                 <div className="absolute inset-0 bg-gradient-to-t from-primary/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               </div>
-              
-              {/* Decorative corners */}
               <div className="absolute -top-3 -right-3 w-24 h-24 border-t-4 border-r-4 border-primary/30 rounded-tr-2xl" />
               <div className="absolute -bottom-3 -left-3 w-24 h-24 border-b-4 border-l-4 border-secondary/30 rounded-bl-2xl" />
             </div>
           </motion.div>
 
-          {/* Content */}
           <motion.div
             initial={{ opacity: 0, x: 50 }}
             animate={isInView ? { opacity: 1, x: 0 } : {}}
@@ -76,26 +61,17 @@ const About = () => {
           >
             <div>
               <h3 className="text-3xl font-bold mb-4">
-                <span className="bg-gradient-primary bg-clip-text text-transparent">
-                  Full Stack Developer
-                </span>
+                <span className="bg-gradient-primary bg-clip-text text-transparent">{data.title}</span>
               </h3>
-              <p className="text-muted-foreground leading-relaxed">
-                I'm <span className="font-semibold text-foreground">Ahmad Wais</span> (Son of Mohammad Ismail Sarwari), 
-                a passionate Full-Stack Web Developer specializing in the MERN stack (MongoDB, Express.js, React.js, Node.js) 
-                and Mobile Application Developer proficient in Flutter.
-              </p>
-              <p className="text-muted-foreground leading-relaxed mt-4">
-                Currently studying at <span className="font-semibold text-foreground">Kabul Polytechnic University</span>, 
-                Computer Science Faculty, Information System Department. With over 5 years of experience, I've helped businesses 
-                and startups build scalable, high-performance web and mobile applications.
-              </p>
+              {data.bio.split('\n\n').map((para, i) => (
+                <p key={i} className="text-muted-foreground leading-relaxed mt-4 first:mt-0">{para}</p>
+              ))}
               <div className="mt-4 space-y-2">
                 <p className="text-muted-foreground">
-                  <span className="font-semibold text-foreground">Email:</span> ahmadwaissarwari@gmail.com
+                  <span className="font-semibold text-foreground">Email:</span> {data.email}
                 </p>
                 <p className="text-muted-foreground">
-                  <span className="font-semibold text-foreground">Phone:</span> +93 776 415 307
+                  <span className="font-semibold text-foreground">Phone:</span> {data.phone}
                 </p>
               </div>
             </div>
