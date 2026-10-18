@@ -4,30 +4,46 @@ import PageLoader from '@/components/PageLoader';
 import { DashboardHomeSkeleton } from '@/components/Skeletons';
 import {
   FolderGit2, Wrench, MessageSquare, Briefcase, Eye,
-  TrendingUp, Activity, ArrowUpRight, Sparkles, Zap,
-  Clock, CheckCircle2, Circle,
+  Activity, ArrowUpRight, Sparkles, Zap,
+  Clock, CheckCircle2, Circle, UploadCloud,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Link } from 'react-router-dom';
-import { getAbout } from '@/lib/store';
+import { hasLegacyLocalData, importLegacyLocalData, usePortfolio } from '@/lib/store';
+import { toast } from 'sonner';
 
 const DashboardHome = () => {
-  const about = getAbout();
-  const [stats] = useState({ projects: 12, skills: 24, testimonials: 8, services: 6 });
+  const { about, projects, skills, testimonials, services } = usePortfolio();
+  const stats = { projects: projects.length, skills: skills.length, testimonials: testimonials.length, services: services.length };
   const [time, setTime] = useState(new Date());
-  const lastLogin = localStorage.getItem('last_login') || 'First login';
+  const [showImport, setShowImport] = useState(hasLegacyLocalData);
+  const [importing, setImporting] = useState(false);
+
+  const handleImport = async () => {
+    setImporting(true);
+    try {
+      await importLegacyLocalData();
+      setShowImport(false);
+      toast.success('Your browser data is now saved in the database and visible on the website');
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Import failed');
+    } finally {
+      setImporting(false);
+    }
+  };
+  const lastVisited = localStorage.getItem('dashboard_last_visited') || 'First visit';
 
   useEffect(() => {
     const now = new Date().toLocaleString();
-    localStorage.setItem('last_login', now);
+    localStorage.setItem('dashboard_last_visited', now);
     const timer = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
   const completionItems = [
-    { label: 'Profile Info', done: true },
+    { label: 'Profile Info', done: Boolean(about.full_name && about.title) },
     { label: 'Projects Added', done: stats.projects > 0 },
     { label: 'Skills Listed', done: stats.skills > 0 },
     { label: 'Services Defined', done: stats.services > 0 },
@@ -62,7 +78,7 @@ const DashboardHome = () => {
           <div>
             <motion.div className="flex items-center gap-2 mb-2" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
               <Sparkles className="w-5 h-5 text-primary" />
-              <span className="text-sm font-medium text-primary">Welcome Back, {about.full_name.split(' ')[0]}!</span>
+              <span className="text-sm font-medium text-primary">Welcome Back{about.full_name ? `, ${about.full_name.split(' ')[0]}` : ''}!</span>
             </motion.div>
             <motion.h1 className="text-3xl md:text-4xl font-bold mb-2" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
               Dashboard <span className="bg-gradient-primary bg-clip-text text-transparent">Overview</span>
@@ -72,7 +88,7 @@ const DashboardHome = () => {
                 <Clock className="w-4 h-4 text-primary" />
                 {time.toLocaleTimeString()}
               </span>
-              <span>Last login: {lastLogin}</span>
+              <span>Dashboard last visited: {lastVisited}</span>
             </motion.div>
           </div>
           <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.3 }}>
@@ -84,6 +100,23 @@ const DashboardHome = () => {
           </motion.div>
         </div>
       </motion.div>
+
+      {showImport && (
+        <Card className="border-primary/30 bg-primary/5">
+          <CardContent className="flex flex-col gap-4 p-5 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-start gap-3">
+              <div className="rounded-lg bg-primary/10 p-2"><UploadCloud className="h-5 w-5 text-primary" /></div>
+              <div>
+                <p className="font-semibold text-foreground">Content found in this browser</p>
+                <p className="text-sm text-muted-foreground">Earlier edits were saved only in this browser. Import them into the database so every visitor sees them.</p>
+              </div>
+            </div>
+            <Button onClick={() => void handleImport()} disabled={importing} className="shrink-0 gap-2 bg-gradient-primary hover:opacity-90">
+              <UploadCloud className="h-4 w-4" /> {importing ? 'Importing...' : 'Import my local data'}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -104,10 +137,7 @@ const DashboardHome = () => {
                     <motion.div className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent" initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: index * 0.1 + 0.3, type: 'spring' }}>
                       {card.value}
                     </motion.div>
-                    <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
-                      <TrendingUp className="w-3 h-3 text-green-500" />
-                      <span className="text-green-500 font-medium">+12%</span> from last month
-                    </p>
+                    <p className="mt-2 text-xs text-muted-foreground">Live on your website</p>
                   </CardContent>
                 </Card>
               </Link>
@@ -189,23 +219,8 @@ const DashboardHome = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <ul className="space-y-3">
-                {[
-                  { text: 'Project "E-Commerce" updated', time: '2 min ago', color: 'bg-blue-500' },
-                  { text: 'New skill "Docker" added', time: '1 hr ago', color: 'bg-purple-500' },
-                  { text: 'Testimonial from Sarah added', time: '3 hrs ago', color: 'bg-yellow-500' },
-                  { text: 'Profile information saved', time: 'Yesterday', color: 'bg-green-500' },
-                  { text: 'Service "UI/UX Design" created', time: '2 days ago', color: 'bg-cyan-500' },
-                ].map((item, i) => (
-                  <motion.li key={i} className="flex items-start gap-3" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 + i * 0.08 }}>
-                    <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${item.color}`} />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm truncate">{item.text}</p>
-                      <p className="text-xs text-muted-foreground">{item.time}</p>
-                    </div>
-                  </motion.li>
-                ))}
-              </ul>
+              <p className="text-sm text-muted-foreground">Portfolio edit history is not recorded yet.</p>
+              <Link to="/dashboard/analytics"><Button variant="outline" className="mt-3">Open real-time website analytics</Button></Link>
             </CardContent>
           </Card>
         </motion.div>

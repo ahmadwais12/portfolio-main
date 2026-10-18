@@ -1,0 +1,236 @@
+-- WARNING: This schema is for context only and is not meant to be run.
+-- Table order and constraints may not be valid for execution.
+
+CREATE TABLE public.portfolio_profile (
+  id text NOT NULL DEFAULT 'main'::text CHECK (id = 'main'::text),
+  full_name text NOT NULL DEFAULT ''::text,
+  title text NOT NULL DEFAULT ''::text,
+  bio text NOT NULL DEFAULT ''::text,
+  email text NOT NULL DEFAULT ''::text,
+  phone text NOT NULL DEFAULT ''::text,
+  location text NOT NULL DEFAULT ''::text,
+  years_experience text NOT NULL DEFAULT ''::text,
+  projects_completed text NOT NULL DEFAULT ''::text,
+  technologies text NOT NULL DEFAULT ''::text,
+  avatar_url text NOT NULL DEFAULT ''::text,
+  resume_url text NOT NULL DEFAULT ''::text,
+  social_links jsonb NOT NULL DEFAULT '{"github": "", "twitter": "", "linkedin": "", "whatsapp": ""}'::jsonb,
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_by uuid,
+  CONSTRAINT portfolio_profile_pkey PRIMARY KEY (id),
+  CONSTRAINT portfolio_profile_updated_by_fkey FOREIGN KEY (updated_by) REFERENCES public.users(id)
+);
+CREATE TABLE public.portfolio_projects (
+  id text NOT NULL DEFAULT (gen_random_uuid())::text,
+  title text NOT NULL,
+  description text NOT NULL DEFAULT ''::text,
+  long_description text NOT NULL DEFAULT ''::text,
+  image text NOT NULL DEFAULT ''::text,
+  tags ARRAY NOT NULL DEFAULT '{}'::text[],
+  category text NOT NULL DEFAULT 'web'::text,
+  favorite boolean NOT NULL DEFAULT false,
+  github_url text NOT NULL DEFAULT ''::text,
+  demo_url text NOT NULL DEFAULT ''::text,
+  published boolean NOT NULL DEFAULT true,
+  sort_order integer NOT NULL DEFAULT 0,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_by uuid,
+  CONSTRAINT portfolio_projects_pkey PRIMARY KEY (id),
+  CONSTRAINT portfolio_projects_updated_by_fkey FOREIGN KEY (updated_by) REFERENCES public.users(id)
+);
+CREATE TABLE public.portfolio_skills (
+  id text NOT NULL DEFAULT (gen_random_uuid())::text,
+  name text NOT NULL,
+  category text NOT NULL DEFAULT ''::text,
+  level integer NOT NULL DEFAULT 0 CHECK (level >= 0 AND level <= 100),
+  published boolean NOT NULL DEFAULT true,
+  sort_order integer NOT NULL DEFAULT 0,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_by uuid,
+  CONSTRAINT portfolio_skills_pkey PRIMARY KEY (id),
+  CONSTRAINT portfolio_skills_updated_by_fkey FOREIGN KEY (updated_by) REFERENCES public.users(id)
+);
+CREATE TABLE public.portfolio_resume_items (
+  id text NOT NULL DEFAULT (gen_random_uuid())::text,
+  type text NOT NULL CHECK (type = ANY (ARRAY['work'::text, 'education'::text, 'certification'::text])),
+  title text NOT NULL,
+  organization text NOT NULL DEFAULT ''::text,
+  period text NOT NULL DEFAULT ''::text,
+  description text NOT NULL DEFAULT ''::text,
+  published boolean NOT NULL DEFAULT true,
+  sort_order integer NOT NULL DEFAULT 0,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_by uuid,
+  CONSTRAINT portfolio_resume_items_pkey PRIMARY KEY (id),
+  CONSTRAINT portfolio_resume_items_updated_by_fkey FOREIGN KEY (updated_by) REFERENCES public.users(id)
+);
+CREATE TABLE public.portfolio_services (
+  id text NOT NULL DEFAULT (gen_random_uuid())::text,
+  title text NOT NULL,
+  description text NOT NULL DEFAULT ''::text,
+  icon text NOT NULL DEFAULT ''::text,
+  features ARRAY NOT NULL DEFAULT '{}'::text[],
+  published boolean NOT NULL DEFAULT true,
+  sort_order integer NOT NULL DEFAULT 0,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_by uuid,
+  CONSTRAINT portfolio_services_pkey PRIMARY KEY (id),
+  CONSTRAINT portfolio_services_updated_by_fkey FOREIGN KEY (updated_by) REFERENCES public.users(id)
+);
+CREATE TABLE public.portfolio_testimonials (
+  id text NOT NULL DEFAULT (gen_random_uuid())::text,
+  name text NOT NULL,
+  role text NOT NULL DEFAULT ''::text,
+  company text NOT NULL DEFAULT ''::text,
+  content text NOT NULL DEFAULT ''::text,
+  image text NOT NULL DEFAULT ''::text,
+  rating integer NOT NULL DEFAULT 5 CHECK (rating >= 0 AND rating <= 5),
+  published boolean NOT NULL DEFAULT true,
+  sort_order integer NOT NULL DEFAULT 0,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_by uuid,
+  CONSTRAINT portfolio_testimonials_pkey PRIMARY KEY (id),
+  CONSTRAINT portfolio_testimonials_updated_by_fkey FOREIGN KEY (updated_by) REFERENCES public.users(id)
+);
+CREATE TABLE public.portfolio_social_links (
+  id text NOT NULL,
+  label text NOT NULL,
+  icon text NOT NULL DEFAULT ''::text,
+  sub text NOT NULL DEFAULT ''::text,
+  url text NOT NULL DEFAULT ''::text,
+  color text NOT NULL DEFAULT ''::text,
+  enabled boolean NOT NULL DEFAULT true,
+  sort_order integer NOT NULL DEFAULT 0,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_by uuid,
+  CONSTRAINT portfolio_social_links_pkey PRIMARY KEY (id),
+  CONSTRAINT portfolio_social_links_updated_by_fkey FOREIGN KEY (updated_by) REFERENCES public.users(id)
+);
+CREATE TABLE public.portfolio_settings (
+  id text NOT NULL DEFAULT 'main'::text CHECK (id = 'main'::text),
+  notifications boolean NOT NULL DEFAULT true,
+  email_alerts boolean NOT NULL DEFAULT false,
+  public_profile boolean NOT NULL DEFAULT true,
+  show_resume boolean NOT NULL DEFAULT true,
+  extra jsonb NOT NULL DEFAULT '{}'::jsonb,
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_by uuid,
+  CONSTRAINT portfolio_settings_pkey PRIMARY KEY (id),
+  CONSTRAINT portfolio_settings_updated_by_fkey FOREIGN KEY (updated_by) REFERENCES public.users(id)
+);
+CREATE TABLE public.portfolio_seo_audits (
+  path text NOT NULL CHECK (path ~~ '/%'::text),
+  title text NOT NULL DEFAULT ''::text,
+  checked_at timestamp with time zone NOT NULL DEFAULT now(),
+  checks jsonb NOT NULL DEFAULT '[]'::jsonb,
+  h1 ARRAY NOT NULL DEFAULT '{}'::text[],
+  h2_count integer NOT NULL DEFAULT 0 CHECK (h2_count >= 0),
+  image_count integer NOT NULL DEFAULT 0 CHECK (image_count >= 0),
+  missing_alt_count integer NOT NULL DEFAULT 0 CHECK (missing_alt_count >= 0),
+  internal_links integer NOT NULL DEFAULT 0 CHECK (internal_links >= 0),
+  json_ld_types ARRAY NOT NULL DEFAULT '{}'::text[],
+  sitemap_available boolean,
+  CONSTRAINT portfolio_seo_audits_pkey PRIMARY KEY (path)
+);
+CREATE TABLE public.analytics_visitors (
+  id uuid NOT NULL,
+  first_seen timestamp with time zone NOT NULL DEFAULT now(),
+  last_seen timestamp with time zone NOT NULL DEFAULT now(),
+  first_source text,
+  last_source text,
+  CONSTRAINT analytics_visitors_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.analytics_sessions (
+  id uuid NOT NULL,
+  visitor_id uuid NOT NULL,
+  started_at timestamp with time zone NOT NULL DEFAULT now(),
+  last_activity_at timestamp with time zone NOT NULL DEFAULT now(),
+  entry_route text NOT NULL,
+  exit_route text NOT NULL,
+  referrer text,
+  source text NOT NULL DEFAULT 'Direct'::text,
+  device_type text NOT NULL DEFAULT 'Unknown'::text CHECK (device_type = ANY (ARRAY['Desktop'::text, 'Mobile'::text, 'Tablet'::text, 'Unknown'::text])),
+  browser text NOT NULL DEFAULT 'Unknown'::text,
+  operating_system text NOT NULL DEFAULT 'Unknown'::text,
+  traffic_class text NOT NULL DEFAULT 'unknown'::text CHECK (traffic_class = ANY (ARRAY['human'::text, 'bot'::text, 'unknown'::text])),
+  CONSTRAINT analytics_sessions_pkey PRIMARY KEY (id),
+  CONSTRAINT analytics_sessions_visitor_id_fkey FOREIGN KEY (visitor_id) REFERENCES public.analytics_visitors(id)
+);
+CREATE TABLE public.analytics_page_views (
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  visitor_id uuid NOT NULL,
+  session_id uuid NOT NULL,
+  page_url text NOT NULL,
+  route text NOT NULL,
+  page_title text NOT NULL DEFAULT ''::text,
+  page_type text NOT NULL DEFAULT 'page'::text,
+  referrer text,
+  source text NOT NULL DEFAULT 'Direct'::text,
+  utm jsonb NOT NULL DEFAULT '{}'::jsonb,
+  device_type text NOT NULL DEFAULT 'Unknown'::text,
+  browser text NOT NULL DEFAULT 'Unknown'::text,
+  operating_system text NOT NULL DEFAULT 'Unknown'::text,
+  traffic_class text NOT NULL DEFAULT 'unknown'::text,
+  duration_seconds integer,
+  viewed_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT analytics_page_views_pkey PRIMARY KEY (id),
+  CONSTRAINT analytics_page_views_visitor_id_fkey FOREIGN KEY (visitor_id) REFERENCES public.analytics_visitors(id),
+  CONSTRAINT analytics_page_views_session_id_fkey FOREIGN KEY (session_id) REFERENCES public.analytics_sessions(id)
+);
+CREATE TABLE public.analytics_events (
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  visitor_id uuid,
+  session_id uuid,
+  event_name text NOT NULL,
+  route text NOT NULL,
+  metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT analytics_events_pkey PRIMARY KEY (id),
+  CONSTRAINT analytics_events_visitor_id_fkey FOREIGN KEY (visitor_id) REFERENCES public.analytics_visitors(id),
+  CONSTRAINT analytics_events_session_id_fkey FOREIGN KEY (session_id) REFERENCES public.analytics_sessions(id)
+);
+CREATE TABLE public.analytics_rate_limits (
+  visitor_token uuid NOT NULL,
+  bucket_started_at timestamp with time zone NOT NULL,
+  request_count integer NOT NULL DEFAULT 1,
+  CONSTRAINT analytics_rate_limits_pkey PRIMARY KEY (visitor_token)
+);
+CREATE TABLE public.analytics_bots (
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  bot_name text NOT NULL,
+  route text NOT NULL,
+  request_count bigint NOT NULL DEFAULT 1,
+  first_seen timestamp with time zone NOT NULL DEFAULT now(),
+  last_seen timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT analytics_bots_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.users (
+  id uuid NOT NULL,
+  email text,
+  display_name text NOT NULL DEFAULT ''::text,
+  avatar_url text,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  role text CHECK (role IS NULL OR role = 'Super Admin'::text),
+  CONSTRAINT users_pkey PRIMARY KEY (id),
+  CONSTRAINT users_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id)
+);
+CREATE TABLE public.portfolio_contact_messages (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  name text NOT NULL CHECK (char_length(btrim(name)) >= 1 AND char_length(btrim(name)) <= 120),
+  email text NOT NULL CHECK (char_length(email) <= 254 AND email ~* '^[^@\s]+@[^@\s]+\.[^@\s]+$'::text),
+  subject text NOT NULL DEFAULT ''::text CHECK (char_length(subject) <= 200),
+  message text NOT NULL CHECK (char_length(btrim(message)) >= 1 AND char_length(btrim(message)) <= 5000),
+  status text NOT NULL DEFAULT 'new'::text CHECK (status = ANY (ARRAY['new'::text, 'read'::text, 'replied'::text, 'archived'::text])),
+  read_at timestamp with time zone,
+  handled_by uuid,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT portfolio_contact_messages_pkey PRIMARY KEY (id),
+  CONSTRAINT portfolio_contact_messages_handled_by_fkey FOREIGN KEY (handled_by) REFERENCES public.users(id)
+);

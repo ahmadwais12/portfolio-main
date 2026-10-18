@@ -5,7 +5,15 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
+import AboutPage from "./pages/AboutPage";
+import SkillsPage from "./pages/SkillsPage";
+import ServicesPage from "./pages/ServicesPage";
+import ProjectsPage from "./pages/ProjectsPage";
+import ResumePage from "./pages/ResumePage";
+import TestimonialsPage from "./pages/TestimonialsPage";
+import ContactPage from "./pages/ContactPage";
 import AdminLogin from "./pages/dashboard/AdminLogin";
+import CreateUser from "./pages/dashboard/CreateUser";
 import DashboardLayout from "./pages/dashboard/DashboardLayout";
 import DashboardHome from "./pages/dashboard/DashboardHome";
 import ProjectsManager from "./pages/dashboard/ProjectsManager";
@@ -13,7 +21,12 @@ import SkillsManager from "./pages/dashboard/SkillsManager";
 import TestimonialsManager from "./pages/dashboard/TestimonialsManager";
 import ServicesManager from "./pages/dashboard/ServicesManager";
 import ProfileManager from "./pages/dashboard/ProfileManager";
-import SettingsManager from "./pages/dashboard/SettingsManager";
+import SocialManager from "./pages/dashboard/SocialManager";
+import AnalyticsTracker from "./analytics/AnalyticsTracker";
+import SeoManager from "./analytics/SeoManager";
+import SiteIntro from "./components/SiteIntro";
+import AnalyticsDashboard from "./pages/dashboard/AnalyticsDashboard";
+import SiteManagement from "./pages/dashboard/SiteManagement";
 
 const queryClient = new QueryClient();
 
@@ -23,9 +36,20 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <AnalyticsTracker />
+        <SeoManager />
+        <SiteIntro />
         <Routes>
           <Route path="/" element={<Index />} />
-          <Route path="/admin" element={<AdminLogin onLogin={() => { localStorage.setItem('admin_auth', 'true'); window.location.href = '/dashboard'; }} />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/skills" element={<SkillsPage />} />
+          <Route path="/services" element={<ServicesPage />} />
+          <Route path="/projects" element={<ProjectsPage />} />
+          <Route path="/resume" element={<ResumePage />} />
+          <Route path="/testimonials" element={<TestimonialsPage />} />
+          <Route path="/contact" element={<ContactPage />} />
+          <Route path="/admin" element={<AdminLogin onLogin={() => { window.location.href = '/dashboard'; }} />} />
+          <Route path="/admin/create-user" element={<CreateUser />} />
           <Route path="/dashboard" element={<DashboardLayout />}>
             <Route index element={<DashboardHome />} />
             <Route path="projects" element={<ProjectsManager />} />
@@ -33,7 +57,9 @@ const App = () => (
             <Route path="testimonials" element={<TestimonialsManager />} />
             <Route path="services" element={<ServicesManager />} />
             <Route path="profile" element={<ProfileManager />} />
-            <Route path="settings" element={<SettingsManager />} />
+            <Route path="social" element={<SocialManager />} />
+            <Route path="site" element={<SiteManagement />} />
+            <Route path="analytics" element={<AnalyticsDashboard />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

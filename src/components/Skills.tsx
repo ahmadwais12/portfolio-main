@@ -1,8 +1,10 @@
 import { motion, useInView, useMotionValue, useSpring, useTransform } from "motion/react";
 import { useRef, useState, useCallback } from "react";
-import { getSkills, getAbout } from "@/lib/store";
-import { Code2, Server, Smartphone, BookOpen, Container, Sparkles, Zap } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { usePortfolio } from "@/lib/store";
+import { Code2, Server, Smartphone, BookOpen, Container, Sparkles, Zap, Layers, Gauge, Rocket } from "lucide-react";
+import { EmptyState, SectionHeader } from "@/components/SectionHeader";
+import { useUiText } from "@/lib/localization";
+import SectionViewAll from "@/components/SectionViewAll";
 
 /* ─── Category config ─────────────────────────────────────────── */
 const categoryConfig: Record<string, {
@@ -110,32 +112,29 @@ function TiltCard({ children, className, glowColor, spotColor }: {
   );
 }
 
-/* ─── Animated skill chip ─────────────────────────────────────── */
-function SkillChip({ name, gradient, border, textColor, delay }: {
-  name: string; gradient: string; border: string; textColor: string; delay: number;
+/* ─── Animated skill bar ──────────────────────────────────────── */
+function SkillBar({ name, level, gradient, delay }: {
+  name: string; level: number; gradient: string; delay: number;
 }) {
+  const value = Math.max(0, Math.min(100, Number(level) || 0));
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.5, y: 10 }}
-      animate={{ opacity: 1, scale: 1, y: 0 }}
-      transition={{ duration: 0.4, delay, type: "spring", bounce: 0.45 }}
-      whileHover={{ scale: 1.1, y: -3, transition: { duration: 0.15 } }}
-      whileTap={{ scale: 0.95 }}
-      className="relative group/chip"
-    >
-      <Badge
-        variant="outline"
-        className={`relative overflow-hidden px-3 py-1.5 text-xs font-semibold ${border} ${textColor} bg-transparent cursor-default select-none transition-all duration-200`}
-      >
-        <span className={`absolute inset-0 bg-gradient-to-r ${gradient} opacity-0 group-hover/chip:opacity-10 transition-opacity duration-200`} />
-        <motion.span
-          className={`inline-block w-1.5 h-1.5 rounded-full bg-gradient-to-r ${gradient} mr-1.5 flex-shrink-0`}
-          animate={{ scale: [1, 1.5, 1], opacity: [0.7, 1, 0.7] }}
-          transition={{ duration: 2.5, repeat: Infinity, delay: delay * 0.5 }}
-        />
-        <span className="relative z-10">{name}</span>
-      </Badge>
-    </motion.div>
+    <div className="group/bar">
+      <div className="mb-1.5 flex items-center justify-between text-sm">
+        <span className="font-medium text-foreground/90">{name}</span>
+        <span className={`bg-gradient-to-r ${gradient} bg-clip-text text-xs font-bold text-transparent`}>{value}%</span>
+      </div>
+      <div className="h-2 overflow-hidden rounded-full bg-muted">
+        <motion.div
+          className={`relative h-full rounded-full bg-gradient-to-r ${gradient}`}
+          initial={{ width: 0 }}
+          whileInView={{ width: `${value}%` }}
+          viewport={{ once: true }}
+          transition={{ duration: 1, delay, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <span className="absolute inset-0 bg-[linear-gradient(90deg,transparent,rgba(255,255,255,0.45),transparent)] bg-[length:200%_100%] animate-shimmer" />
+        </motion.div>
+      </div>
+    </div>
   );
 }
 
@@ -143,12 +142,20 @@ function SkillChip({ name, gradient, border, textColor, delay }: {
 const Skills = () => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-80px" });
-  const allSkills = getSkills();
-  const about = getAbout();
+  const { skills: allSkills, about } = usePortfolio();
+  const t = useUiText();
   const categories = Array.from(new Set(allSkills.map(s => s.category)));
+  const avgLevel = allSkills.length ? Math.round(allSkills.reduce((sum, s) => sum + (Number(s.level) || 0), 0) / allSkills.length) : 0;
+
+  const stats = [
+    { label: t("skills.title", "Skills"), value: allSkills.length ? `${allSkills.length}` : "", icon: Zap },
+    { label: t("skills.categories", "Categories"), value: categories.length ? `${categories.length}` : "", icon: Layers },
+    { label: t("skills.averageProficiency", "Avg. proficiency"), value: avgLevel ? `${avgLevel}%` : "", icon: Gauge },
+    { label: t("skills.yearsExperience", "Years experience"), value: about.years_experience, icon: Rocket },
+  ].filter(s => s.value.trim());
 
   return (
-    <section id="skills" className="py-24 relative overflow-hidden bg-background" ref={ref}>
+    <section id="skills" className="py-24 relative overflow-hidden bg-muted/30" ref={ref}>
 
       {/* Ambient blobs */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
@@ -168,72 +175,45 @@ const Skills = () => {
 
       <div className="container mx-auto px-4 relative z-10">
 
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={isInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.7 }}
-          className="text-center mb-16"
-        >
-          <motion.div
-            initial={{ opacity: 0, scale: 0.5 }}
-            animate={isInView ? { opacity: 1, scale: 1 } : {}}
-            transition={{ duration: 0.5, type: "spring", bounce: 0.4 }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-card border border-primary/30 text-primary text-sm font-semibold mb-6"
-          >
-            <Sparkles className="w-4 h-4" />
-            Technical Arsenal
-            <Zap className="w-4 h-4" />
-          </motion.div>
-
-          <h2 className="text-5xl md:text-6xl font-black mb-4 tracking-tight">
-            My{" "}
-            <span className="relative inline-block">
-              <span className="bg-gradient-to-r from-cyan-400 via-primary to-violet-500 bg-clip-text text-transparent">
-                Skills
-              </span>
-              <motion.div
-                className="absolute -bottom-1 left-0 right-0 h-1 bg-gradient-to-r from-cyan-400 to-violet-500 rounded-full"
-                initial={{ scaleX: 0 }}
-                animate={isInView ? { scaleX: 1 } : {}}
-                transition={{ duration: 0.8, delay: 0.5 }}
-              />
-            </span>
-          </h2>
-          <p className="text-muted-foreground text-lg max-w-xl mx-auto">
-            Technologies and tools I use to bring ideas to life
-          </p>
-        </motion.div>
+        <SectionHeader
+          eyebrow={t("skills.eyebrow", "Technical arsenal")}
+          icon={Sparkles}
+          title={t("skills.my", "My")}
+          highlight={t("skills.title", "Skills")}
+          description={t("skills.description", "Technologies and tools I use to bring ideas to life.")}
+        />
 
         {/* Stats strip */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={isInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.6, delay: 0.3 }}
-          className="flex flex-wrap justify-center gap-4 mb-14"
-        >
-          {[
-            { label: "Skills Mastered", value: `${allSkills.length}+`, icon: "⚡" },
-            { label: "Categories", value: `${categories.length}`, icon: "🎯" },
-            { label: "Years Experience", value: about.years_experience, icon: "🚀" },
-            { label: "Projects Built", value: about.projects_completed, icon: "🏗️" },
-          ].map((stat, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={isInView ? { opacity: 1, scale: 1 } : {}}
-              transition={{ duration: 0.4, delay: 0.3 + i * 0.08 }}
-              whileHover={{ scale: 1.06, y: -3 }}
-              className="flex items-center gap-3 px-5 py-3 glass-card rounded-2xl border border-border/50 hover:border-primary/30 transition-all duration-300"
-            >
-              <span className="text-xl">{stat.icon}</span>
-              <div>
-                <p className="text-xl font-black bg-gradient-primary bg-clip-text text-transparent leading-none">{stat.value}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{stat.label}</p>
-              </div>
-            </motion.div>
-          ))}
-        </motion.div>
+        {stats.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={isInView ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="mx-auto mb-14 grid max-w-4xl grid-cols-2 gap-3 sm:grid-cols-4"
+          >
+            {stats.map((stat, i) => (
+              <motion.div
+                key={stat.label}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={isInView ? { opacity: 1, scale: 1 } : {}}
+                transition={{ duration: 0.4, delay: 0.2 + i * 0.08 }}
+                className="flex items-center gap-3 rounded-2xl border border-border/60 bg-background/60 px-4 py-3 backdrop-blur-sm transition-all hover:-translate-y-1 hover:border-primary/40"
+              >
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-primary text-white shadow-glow">
+                  <stat.icon className="h-5 w-5" />
+                </span>
+                <div>
+                  <p className="text-xl font-extrabold leading-none text-gradient">{stat.value}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{stat.label}</p>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+        )}
+
+        {categories.length === 0 && (
+          <EmptyState icon={Code2} title={t("skills.emptyTitle", "No skills yet")} description={t("skills.emptyDescription", "Skills added from the dashboard will appear here.")} />
+        )}
 
         {/* 3D Skill cards grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
@@ -287,16 +267,15 @@ const Skills = () => {
                   {/* Divider */}
                   <div className={`h-px bg-gradient-to-r ${cfg.gradient} opacity-25 mb-4 relative z-10`} />
 
-                  {/* Skill chips */}
-                  <div className="flex flex-wrap gap-2 relative z-10" style={{ transform: "translateZ(20px)" }}>
+                  {/* Skill bars */}
+                  <div className="relative z-10 space-y-4" style={{ transform: "translateZ(20px)" }}>
                     {skills.map((skill, i) => (
-                      <SkillChip
+                      <SkillBar
                         key={skill.id}
                         name={skill.name}
+                        level={skill.level}
                         gradient={cfg.gradient}
-                        border={cfg.border}
-                        textColor={cfg.textColor}
-                        delay={catIndex * 0.08 + i * 0.05}
+                        delay={catIndex * 0.08 + i * 0.06}
                       />
                     ))}
                   </div>
@@ -305,6 +284,7 @@ const Skills = () => {
             );
           })}
         </div>
+        {allSkills.length > 0 && <SectionViewAll to="/skills" />}
       </div>
     </section>
   );

@@ -4,7 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Download, Briefcase, GraduationCap, Award, Sparkles, FileText, Calendar, Building2 } from "lucide-react";
-import { getResume, getAbout } from "@/lib/store";
+import { usePortfolio } from "@/lib/store";
+import { EmptyState, SectionHeader } from "@/components/SectionHeader";
+import { trackAnalyticsEvent } from "@/analytics/tracker";
+import { useUiText } from "@/lib/localization";
+import SectionViewAll from "@/components/SectionViewAll";
 
 const iconMap = { work: Briefcase, education: GraduationCap, certification: Award };
 
@@ -17,8 +21,8 @@ const typeConfig = {
 const Resume = () => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-80px" });
-  const timeline = getResume();
-  const about    = getAbout();
+  const { resume: timeline, about } = usePortfolio();
+  const t = useUiText();
   const [activeTab, setActiveTab] = useState("all");
 
   const filtered = activeTab === "all" ? timeline : timeline.filter(i => i.type === activeTab);
@@ -30,7 +34,7 @@ const Resume = () => {
   };
 
   return (
-    <section id="resume" className="py-24 bg-muted/20 relative overflow-hidden" ref={ref}>
+    <section id="resume" className="py-24 bg-background relative overflow-hidden" ref={ref}>
 
       {/* Ambient blobs */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
@@ -42,51 +46,55 @@ const Resume = () => {
 
       <div className="container mx-auto px-4 relative z-10">
 
-        {/* Header */}
-        <motion.div initial={{ opacity:0, y:30 }} animate={isInView ? { opacity:1, y:0 } : {}} transition={{ duration:0.7 }} className="text-center mb-16">
-          <motion.div initial={{ opacity:0, scale:0.5 }} animate={isInView ? { opacity:1, scale:1 } : {}} transition={{ duration:0.5, type:"spring", bounce:0.4 }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-card border border-primary/30 text-primary text-sm font-semibold mb-6">
-            <FileText className="w-4 h-4" /> My Journey <Sparkles className="w-4 h-4" />
-          </motion.div>
+        <SectionHeader
+          eyebrow={t("resume.eyebrow", "My journey")}
+          icon={FileText}
+          title={t("resume.titlePrefix", "Resume &")}
+          highlight={t("resume.highlight", "Experience")}
+          description={t("resume.description", "My professional journey, education and certifications.")}
+        >
+          {about.resume_url && (
+            <div className="mt-8">
+              <a
+                href={about.resume_url}
+                onClick={() => void trackAnalyticsEvent("resume_download_click")}
+                download={`${(about.full_name || "Resume").replace(/ /g, "_")}_Resume.pdf`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Button className="h-12 gap-2 rounded-full bg-gradient-primary px-8 font-semibold text-white shadow-glow hover:opacity-95">
+                  <motion.span animate={{ y:[0,-2,0] }} transition={{ duration:1.5, repeat:Infinity }}>
+                    <Download className="w-5 h-5" />
+                  </motion.span>
+                  {t("resume.download", "Download Resume")}
+                </Button>
+              </a>
+            </div>
+          )}
+        </SectionHeader>
 
-          <h2 className="text-5xl md:text-6xl font-black mb-4 tracking-tight">
-            Resume &{" "}
-            <span className="relative inline-block">
-              <span className="bg-gradient-to-r from-cyan-400 via-primary to-violet-500 bg-clip-text text-transparent">Experience</span>
-              <motion.div className="absolute -bottom-1 left-0 right-0 h-1 bg-gradient-to-r from-cyan-400 to-violet-500 rounded-full"
-                initial={{ scaleX:0 }} animate={isInView ? { scaleX:1 } : {}} transition={{ duration:0.8, delay:0.5 }} />
-            </span>
-          </h2>
-          <p className="text-muted-foreground text-lg max-w-2xl mx-auto mb-8">My professional journey, education and certifications</p>
-
-          {/* Download button */}
-          <motion.div initial={{ opacity:0, y:10 }} animate={isInView ? { opacity:1, y:0 } : {}} transition={{ delay:0.4 }}>
-            <a href={about.resume_url || "/resume.pdf"} download={`${about.full_name.replace(/ /g,"_")}_Resume.pdf`} target="_blank" rel="noopener noreferrer">
-              <Button className="h-12 px-8 bg-gradient-to-r from-cyan-500 to-primary hover:opacity-90 shadow-glow gap-2 font-semibold text-white group">
-                <motion.span animate={{ y:[0,-2,0] }} transition={{ duration:1.5, repeat:Infinity }}>
-                  <Download className="w-5 h-5" />
-                </motion.span>
-                Download Resume
-              </Button>
-            </a>
-          </motion.div>
-        </motion.div>
-
+        {timeline.length === 0 ? (
+          <EmptyState icon={FileText} title={t("resume.emptyTitle", "No resume entries yet")} description={t("resume.emptyDescription", "Work, education and certifications added from the dashboard will appear here.")} />
+        ) : (
+        <>
         {/* Stats strip */}
-        <motion.div initial={{ opacity:0, y:20 }} animate={isInView ? { opacity:1, y:0 } : {}} transition={{ delay:0.3 }}
-          className="flex flex-wrap justify-center gap-4 mb-12">
+        <motion.div initial={{ opacity:0, y:20 }} animate={isInView ? { opacity:1, y:0 } : {}} transition={{ delay:0.2 }}
+          className="mx-auto mb-12 grid max-w-4xl grid-cols-2 gap-3 sm:grid-cols-4">
           {[
-            { label:"Work Experience", icon:"💼", cfg: typeConfig.work },
-            { label:"Education",       icon:"🎓", cfg: typeConfig.education },
-            { label:"Certifications",  icon:"🏆", cfg: typeConfig.certification },
-            { label:"Total Entries",   icon:"📋", cfg: { gradient:"from-primary to-secondary", text:"text-primary" } },
+            { label:t("resume.work", "Work"),           value: counts.work,          icon: Briefcase,     gradient: typeConfig.work.gradient },
+            { label:t("resume.education", "Education"),      value: counts.education,     icon: GraduationCap, gradient: typeConfig.education.gradient },
+            { label:t("resume.certifications", "Certifications"), value: counts.certification, icon: Award,         gradient: typeConfig.certification.gradient },
+            { label:t("resume.totalEntries", "Total entries"),  value: timeline.length,      icon: Sparkles,      gradient: "from-primary to-secondary" },
           ].map((s,i) => (
-            <motion.div key={i} initial={{ opacity:0, scale:0.8 }} animate={isInView ? { opacity:1, scale:1 } : {}}
-              transition={{ delay:0.3+i*0.08 }} whileHover={{ scale:1.05, y:-2 }}
-              className="flex items-center gap-3 px-5 py-3 glass-card rounded-2xl border border-border/50 hover:border-primary/30 transition-all duration-300">
-              <span className="text-xl">{s.icon}</span>
+            <motion.div key={s.label} initial={{ opacity:0, scale:0.9 }} animate={isInView ? { opacity:1, scale:1 } : {}}
+              transition={{ delay:0.2+i*0.08 }}
+              className="flex items-center gap-3 rounded-2xl border border-border/60 bg-card/60 px-4 py-3 backdrop-blur-sm transition-all hover:-translate-y-1 hover:border-primary/40">
+              <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${s.gradient} text-white shadow-md`}>
+                <s.icon className="h-5 w-5" />
+              </span>
               <div>
-                <p className={`text-sm font-bold bg-gradient-to-r ${s.cfg.gradient} bg-clip-text text-transparent leading-none`}>{s.label}</p>
+                <p className={`text-xl font-extrabold leading-none bg-gradient-to-r ${s.gradient} bg-clip-text text-transparent`}>{s.value}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{s.label}</p>
               </div>
             </motion.div>
           ))}
@@ -96,16 +104,17 @@ const Resume = () => {
         <motion.div initial={{ opacity:0, y:16 }} animate={isInView ? { opacity:1, y:0 } : {}} transition={{ delay:0.35 }}
           className="flex justify-center mb-12">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="glass-card border border-border/50 p-1 rounded-2xl gap-1">
+            <TabsList className="h-auto flex-wrap justify-center gap-1 rounded-3xl sm:rounded-full border border-border/60 bg-background/60 p-1 backdrop-blur-md">
               {[
-                { value:"all",           label:"All",           count: timeline.length },
-                { value:"work",          label:"Work",          count: counts.work },
-                { value:"education",     label:"Education",     count: counts.education },
-                { value:"certification", label:"Certifications",count: counts.certification },
+                { value:"all",           label:t("resume.all", "All"),           count: timeline.length },
+                { value:"work",          label:t("resume.work", "Work"),          count: counts.work },
+                { value:"education",     label:t("resume.education", "Education"),     count: counts.education },
+                { value:"certification", label:t("resume.certifications", "Certifications"),count: counts.certification },
               ].map(t => (
                 <TabsTrigger key={t.value} value={t.value}
-                  className="rounded-xl px-4 py-2 text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-primary data-[state=active]:text-white data-[state=active]:shadow-glow transition-all duration-300 gap-1.5">
+                  className="gap-1.5 rounded-full px-4 py-2 text-sm transition-all duration-300 data-[state=active]:bg-gradient-primary data-[state=active]:text-white data-[state=active]:shadow-glow">
                   {t.label}
+                  <span className="rounded-full bg-foreground/10 px-1.5 text-[10px] font-bold">{t.count}</span>
                 </TabsTrigger>
               ))}
             </TabsList>
@@ -174,7 +183,7 @@ const Resume = () => {
                             {item.period}
                           </Badge>
                           <Badge className={`bg-gradient-to-r ${cfg.gradient} text-white border-0 text-xs capitalize`}>
-                            {cfg.label}
+                            {item.type_label && item.type_label !== item.type ? item.type_label : t(`resume.${item.type}`, cfg.label)}
                           </Badge>
                         </div>
                       </div>
@@ -191,6 +200,9 @@ const Resume = () => {
             </div>
           </div>
         </div>
+        <SectionViewAll to="/resume" />
+        </>
+        )}
       </div>
     </section>
   );

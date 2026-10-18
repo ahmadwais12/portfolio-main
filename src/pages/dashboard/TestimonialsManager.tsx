@@ -26,43 +26,29 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { supabase, type Testimonial } from '@/lib/supabase';
+import { FileUploadField } from '@/components/FileUploadField';
+import { getTestimonials, saveTestimonials, type TestimonialItem as Testimonial } from '@/lib/store';
 import { toast } from 'sonner';
-
-// Dummy data
-const dummyTestimonials: Testimonial[] = [
-  {
-    id: '1',
-    name: 'Sarah Johnson',
-    role: 'CEO',
-    company: 'TechCorp',
-    content: 'Amazing work! The project was delivered on time and exceeded all expectations. Highly recommended!',
-    image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&fit=crop',
-    rating: 5,
-  },
-  {
-    id: '2',
-    name: 'Michael Chen',
-    role: 'Product Manager',
-    company: 'InnovateLabs',
-    content: 'Professional, skilled, and great communication throughout the project. Will definitely work together again.',
-    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop',
-    rating: 5,
-  },
-  {
-    id: '3',
-    name: 'Emily Davis',
-    role: 'CTO',
-    company: 'StartupXYZ',
-    content: 'Excellent technical skills and attention to detail. The final product was exactly what we needed.',
-    image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&h=200&fit=crop',
-    rating: 4,
-  },
-];
+import { LocalizedField } from '@/components/dashboard/LocalizedField';
+import { localizedValues, type ContentLanguage } from '@/lib/localization';
 
 const TestimonialsManager = () => {
-  const [testimonials, setTestimonials] = useState<Testimonial[]>(dummyTestimonials);
-  const [loading, setLoading] = useState(false);
+  const [testimonials, setTestimonials] = useState<Testimonial[]>(getTestimonials());
+  const [saving, setSaving] = useState(false);
+  const persistTestimonials = async (updated: Testimonial[], message: string) => {
+    setSaving(true);
+    try {
+      await saveTestimonials(updated);
+      setTestimonials(updated);
+      toast.success(message);
+      return true;
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Unable to save testimonials');
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  };
   const [searchQuery, setSearchQuery] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -75,28 +61,23 @@ const TestimonialsManager = () => {
     image: '',
     rating: 5,
   });
+  const setLocalized = (field: string, language: ContentLanguage, value: string) => setFormData(current => ({
+    ...current,
+    [`${field}_${language}`]: value,
+    ...(language === 'en' ? { [field]: value } : {}),
+  }));
 
-  const handleSave = () => {
-    if (selectedTestimonial?.id) {
-      setTestimonials(testimonials.map(t => t.id === selectedTestimonial.id ? { ...t, ...formData } as Testimonial : t));
-      toast.success('Testimonial updated successfully');
-    } else {
-      const newTestimonial: Testimonial = {
-        ...formData as Testimonial,
-        id: Date.now().toString(),
-        created_at: new Date().toISOString(),
-      };
-      setTestimonials([newTestimonial, ...testimonials]);
-      toast.success('Testimonial created successfully');
-    }
-    setIsDialogOpen(false);
+  const handleSave = async () => {
+    if (!formData.name?.trim() || !formData.content?.trim()) { toast.error('Name and testimonial content are required'); return; }
+    const saved = selectedTestimonial?.id
+      ? await persistTestimonials(testimonials.map(t => t.id === selectedTestimonial.id ? { ...t, ...formData } as Testimonial : t), 'Testimonial updated successfully')
+      : await persistTestimonials([{ ...formData as Testimonial, id: crypto.randomUUID() }, ...testimonials], 'Testimonial created successfully');
+    if (saved) setIsDialogOpen(false);
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!selectedTestimonial?.id) return;
-    setTestimonials(testimonials.filter(t => t.id !== selectedTestimonial.id));
-    toast.success('Testimonial deleted successfully');
-    setIsDeleteDialogOpen(false);
+    if (await persistTestimonials(testimonials.filter(t => t.id !== selectedTestimonial.id), 'Testimonial deleted successfully')) setIsDeleteDialogOpen(false);
   };
 
   const openEditDialog = (testimonial: Testimonial) => {
@@ -179,9 +160,7 @@ const TestimonialsManager = () => {
       </motion.div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {loading ? (
-          <div className="col-span-2 text-center py-12">Loading...</div>
-        ) : filteredTestimonials.length === 0 ? (
+        {filteredTestimonials.length === 0 ? (
           <div className="col-span-2 text-center py-12 text-muted-foreground">
             No testimonials found. Add your first testimonial to get started.
           </div>
@@ -219,7 +198,7 @@ const TestimonialsManager = () => {
                               className={`w-4 h-4 ${
                                 i < testimonial.rating
                                   ? 'text-yellow-500 fill-current'
-                                  : 'text-gray-300'
+                                  : 'text-muted-foreground/30'
                               }`}
                             />
                           ))}
@@ -260,7 +239,7 @@ const TestimonialsManager = () => {
       </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-lg glass-card border-0">
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto glass-card border-0">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-2xl">
               <div className="p-2 rounded-lg bg-gradient-primary">
@@ -270,47 +249,17 @@ const TestimonialsManager = () => {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-muted-foreground">Name *</Label>
-                <Input
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="Client name"
-                  className="glass-card border-0"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-muted-foreground">Image URL</Label>
-                <Input
-                  value={formData.image}
-                  onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                  placeholder="https://..."
-                  className="glass-card border-0"
-                />
-              </div>
-            </div>
+            <LocalizedField label="Name" required value={localizedValues(formData, 'name')} onChange={(language, value) => setLocalized('name', language, value)} placeholder="Client name" />
+            <FileUploadField
+              label="Photo"
+              value={formData.image || ''}
+              onChange={(url) => setFormData(prev => ({ ...prev, image: url }))}
+              bucket="portfolio-assets"
+              prefix="testimonial"
+            />
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-muted-foreground">Role</Label>
-                <Input
-                  value={formData.role}
-                  onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                  placeholder="e.g., CEO"
-                  className="glass-card border-0"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-muted-foreground">Company</Label>
-                <Input
-                  value={formData.company}
-                  onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                  placeholder="Company name"
-                  className="glass-card border-0"
-                />
-              </div>
-            </div>
+            <LocalizedField label="Role" value={localizedValues(formData, 'role')} onChange={(language, value) => setLocalized('role', language, value)} placeholder="e.g., CEO" />
+            <LocalizedField label="Company" value={localizedValues(formData, 'company')} onChange={(language, value) => setLocalized('company', language, value)} placeholder="Company name" />
 
             <div className="space-y-2">
               <Label className="text-muted-foreground">Rating</Label>
@@ -326,7 +275,7 @@ const TestimonialsManager = () => {
                       className={`w-6 h-6 transition-colors ${
                         star <= (formData.rating || 0)
                           ? 'text-yellow-500 fill-current'
-                          : 'text-gray-300 hover:text-gray-400'
+                          : 'text-muted-foreground/30 hover:text-muted-foreground/60'
                       }`}
                     />
                   </button>
@@ -335,14 +284,7 @@ const TestimonialsManager = () => {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-muted-foreground">Testimonial Content *</Label>
-              <Textarea
-                value={formData.content}
-                onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                placeholder="Write the testimonial here..."
-                rows={4}
-                className="glass-card border-0 resize-none"
-              />
+              <LocalizedField label="Testimonial Content" required value={localizedValues(formData, 'content')} onChange={(language, value) => setLocalized('content', language, value)} multiline rows={4} placeholder="Write the testimonial here..." />
             </div>
           </div>
           <DialogFooter>
@@ -350,10 +292,11 @@ const TestimonialsManager = () => {
               Cancel
             </Button>
             <Button
-              onClick={handleSave}
+              onClick={() => void handleSave()}
+              disabled={saving}
               className="bg-gradient-primary hover:opacity-90 shadow-glow"
             >
-              {selectedTestimonial ? 'Save Changes' : 'Add Testimonial'}
+              {saving ? 'Saving...' : selectedTestimonial ? 'Save Changes' : 'Add Testimonial'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -377,7 +320,8 @@ const TestimonialsManager = () => {
           <AlertDialogFooter>
             <AlertDialogCancel className="border-0">Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleDelete}
+              onClick={(e) => { e.preventDefault(); void handleDelete(); }}
+              disabled={saving}
               className="bg-red-500 hover:bg-red-600 text-white"
             >
               Delete

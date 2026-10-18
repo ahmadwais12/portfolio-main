@@ -455,6 +455,36 @@ export const ProfileManagerSkeleton = () => (
   </div>
 );
 
+// ─── Social Media Manager Skeleton ───────────────────────────────────────────
+export const SocialManagerSkeleton = () => (
+  <div className="space-y-6 max-w-7xl mx-auto">
+    <div className="flex flex-wrap justify-between gap-3">
+      <div className="space-y-2">
+        <Skeleton className="h-8 w-44" />
+        <Skeleton className="h-4 w-72" />
+      </div>
+      <Skeleton className="h-10 w-32 rounded-xl" />
+    </div>
+    <Skeleton className="h-11 w-full max-w-md rounded-xl" />
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+      {[...Array(9)].map((_, i) => (
+        <div key={i} className="glass-card rounded-2xl p-4 space-y-3">
+          <div className="flex items-center gap-3">
+            <Skeleton className="w-11 h-11 rounded-xl flex-shrink-0" />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-3 w-32" />
+            </div>
+            <Skeleton className="h-6 w-11 rounded-full" />
+          </div>
+          <Skeleton className="h-10 w-full rounded-xl" />
+          <Skeleton className="h-3 w-40" />
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
 // ─── Settings Manager Skeleton ────────────────────────────────────────────────
 export const SettingsManagerSkeleton = () => (
   <div className="space-y-6 max-w-7xl mx-auto">

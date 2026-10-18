@@ -14,6 +14,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getResume, saveResume, type ResumeItem } from '@/lib/store';
 import { toast } from 'sonner';
+import { LocalizedField } from '@/components/dashboard/LocalizedField';
+import { localizedValues, type ContentLanguage } from '@/lib/localization';
 
 const iconMap = { work: Briefcase, education: GraduationCap, certification: Award };
 const colorMap = { work: 'from-cyan-500 to-blue-500', education: 'from-purple-500 to-violet-500', certification: 'from-yellow-500 to-orange-500' };
@@ -27,26 +29,39 @@ const ResumeManager = () => {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selected, setSelected] = useState<ResumeItem | null>(null);
   const [form, setForm] = useState<Omit<ResumeItem, 'id'>>(empty);
+  const setLocalized = (field: string, language: ContentLanguage, value: string, syncBase = true) => setForm(current => ({
+    ...current,
+    [`${field}_${language}`]: value,
+    ...(language === 'en' && syncBase ? { [field]: value } : {}),
+  }));
 
-  const persist = (updated: ResumeItem[]) => { setItems(updated); saveResume(updated); };
-
-  const handleSave = () => {
-    if (!form.title || !form.organization) { toast.error('Title and organization are required'); return; }
-    if (selected) {
-      persist(items.map(i => i.id === selected.id ? { ...i, ...form } : i));
-      toast.success('Updated successfully');
-    } else {
-      persist([...items, { ...form, id: Date.now().toString() }]);
-      toast.success('Added successfully');
+  const [saving, setSaving] = useState(false);
+  const persist = async (updated: ResumeItem[], message: string) => {
+    setSaving(true);
+    try {
+      await saveResume(updated);
+      setItems(updated);
+      toast.success(message);
+      return true;
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Unable to save resume');
+      return false;
+    } finally {
+      setSaving(false);
     }
-    setIsDialogOpen(false);
   };
 
-  const handleDelete = () => {
+  const handleSave = async () => {
+    if (!form.title || !form.organization) { toast.error('Title and organization are required'); return; }
+    const saved = selected
+      ? await persist(items.map(i => i.id === selected.id ? { ...i, ...form } : i), 'Updated successfully')
+      : await persist([...items, { ...form, id: crypto.randomUUID() }], 'Added successfully');
+    if (saved) setIsDialogOpen(false);
+  };
+
+  const handleDelete = async () => {
     if (!selected) return;
-    persist(items.filter(i => i.id !== selected.id));
-    toast.success('Deleted');
-    setIsDeleteOpen(false);
+    if (await persist(items.filter(i => i.id !== selected.id), 'Deleted')) setIsDeleteOpen(false);
   };
 
   const openEdit = (item: ResumeItem) => { setSelected(item); setForm(item); setIsDialogOpen(true); };
@@ -119,7 +134,7 @@ const ResumeManager = () => {
       </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="glass-card border-0 max-w-lg">
+        <DialogContent className="glass-card border-0 max-w-5xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-xl">
               <div className="p-2 rounded-lg bg-gradient-primary"><Sparkles className="w-4 h-4 text-white" /></div>
@@ -138,29 +153,16 @@ const ResumeManager = () => {
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-muted-foreground">Title *</Label>
-                <Input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} className="glass-card border-0" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-muted-foreground">Organization *</Label>
-                <Input value={form.organization} onChange={e => setForm({ ...form, organization: e.target.value })} className="glass-card border-0" />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label className="text-muted-foreground">Period</Label>
-              <Input value={form.period} onChange={e => setForm({ ...form, period: e.target.value })} placeholder="e.g. 2020 - Present" className="glass-card border-0" />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-muted-foreground">Description</Label>
-              <Textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} rows={3} className="glass-card border-0 resize-none" />
-            </div>
+            <LocalizedField label="Type Display Text" value={{ en: form.type_label_en || form.type }} onChange={(language, value) => setLocalized('type_label', language, value, false)} />
+            <LocalizedField label="Title" required value={localizedValues(form, 'title')} onChange={(language, value) => setLocalized('title', language, value)} />
+            <LocalizedField label="Organization" required value={localizedValues(form, 'organization')} onChange={(language, value) => setLocalized('organization', language, value)} />
+            <LocalizedField label="Period" value={localizedValues(form, 'period')} onChange={(language, value) => setLocalized('period', language, value)} placeholder="e.g. 2020 - Present" />
+            <LocalizedField label="Description" value={localizedValues(form, 'description')} onChange={(language, value) => setLocalized('description', language, value)} multiline rows={3} />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleSave} className="bg-gradient-primary hover:opacity-90 shadow-glow">
-              {selected ? 'Save Changes' : 'Add Entry'}
+            <Button onClick={() => void handleSave()} disabled={saving} className="bg-gradient-primary hover:opacity-90 shadow-glow">
+              {saving ? 'Saving...' : selected ? 'Save Changes' : 'Add Entry'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -179,7 +181,7 @@ const ResumeManager = () => {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel className="border-0">Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-red-500 hover:bg-red-600 text-white">Delete</AlertDialogAction>
+            <AlertDialogAction onClick={(e) => { e.preventDefault(); void handleDelete(); }} disabled={saving} className="bg-red-500 hover:bg-red-600 text-white">Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

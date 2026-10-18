@@ -4,8 +4,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ExternalLink, Github, Star, Sparkles, Layers } from "lucide-react";
-import { getProjects, type ProjectItem } from "@/lib/store";
+import { ExternalLink, Github, Star, Layers, FolderGit2, ArrowUpRight } from "lucide-react";
+import { EmptyState, SectionHeader } from "@/components/SectionHeader";
+import { usePortfolio, type ProjectItem } from "@/lib/store";
+import { trackAnalyticsEvent } from "@/analytics/tracker";
+import { useUiText } from "@/lib/localization";
+import SectionViewAll from "@/components/SectionViewAll";
 
 /* ─── 3D Tilt Card (Aceternity-style) ────────────────────────── */
 function TiltCard({ children, className }: { children: React.ReactNode; className?: string }) {
@@ -78,7 +82,9 @@ type ProjectDialogProps = {
 };
 
 /* ─── Project Card ────────────────────────────────────────────── */
-const ProjectCard = ({ project, index, onOpen, isInView }: ProjectCardProps) => (
+const ProjectCard = ({ project, index, onOpen, isInView }: ProjectCardProps) => {
+  const t = useUiText();
+  return (
   <motion.div
     initial={{ opacity: 0, y: 50, scale: 0.95 }}
     animate={isInView ? { opacity: 1, y: 0, scale: 1 } : {}}
@@ -91,11 +97,21 @@ const ProjectCard = ({ project, index, onOpen, isInView }: ProjectCardProps) => 
       >
         {/* Image */}
         <div className="relative overflow-hidden aspect-video" style={{ transform: "translateZ(0px)" }}>
-          <img
-            src={project.image}
-            alt={project.title}
-            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-          />
+          {project.image ? (
+            <img
+              src={project.image}
+              alt={project.title}
+              loading="lazy"
+              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/20 via-background to-secondary/20">
+              <FolderGit2 className="h-12 w-12 text-primary/50" />
+            </div>
+          )}
+          <Badge variant="outline" className="absolute left-3 top-3 z-10 border-white/20 bg-background/70 capitalize backdrop-blur-md">
+            {project.category}
+          </Badge>
           {/* Gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
@@ -109,7 +125,7 @@ const ProjectCard = ({ project, index, onOpen, isInView }: ProjectCardProps) => 
             >
               <Badge className="bg-gradient-to-r from-cyan-500 to-primary text-white border-0 shadow-glow gap-1">
                 <Star className="w-3 h-3 fill-current" />
-                Featured
+                {t("projects.featured", "Featured")}
               </Badge>
             </motion.div>
           )}
@@ -122,19 +138,20 @@ const ProjectCard = ({ project, index, onOpen, isInView }: ProjectCardProps) => 
                 className="bg-primary/90 hover:bg-primary text-white shadow-glow backdrop-blur-sm translate-y-4 group-hover:translate-y-0 transition-transform duration-300"
                 onClick={() => onOpen(project)}
               >
-                View Details
+                {t("projects.viewDetails", "View Details")}
               </Button>
             </motion.div>
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            {project.github_url && <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Button
                 size="sm"
                 variant="outline"
+                aria-label={t("projects.viewSourceOnGithub", "View source on GitHub")}
                 className="glass-card hover:bg-primary/10 hover:border-primary/50 backdrop-blur-sm translate-y-4 group-hover:translate-y-0 transition-transform duration-300 delay-75"
-                onClick={(e) => { e.stopPropagation(); window.open(project.github, "_blank"); }}
+                onClick={(e) => { e.stopPropagation(); void trackAnalyticsEvent("project_github_click", { project_id: project.id }); window.open(project.github_url, "_blank"); }}
               >
                 <Github className="w-4 h-4" />
               </Button>
-            </motion.div>
+            </motion.div>}
           </div>
         </div>
 
@@ -143,8 +160,9 @@ const ProjectCard = ({ project, index, onOpen, isInView }: ProjectCardProps) => 
           {/* Glow orb */}
           <div className="absolute -top-4 -right-4 w-20 h-20 bg-primary/20 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
-          <h3 className="text-xl font-bold mb-2 group-hover:text-primary transition-colors duration-300">
+          <h3 className="mb-2 flex items-start justify-between gap-2 text-xl font-bold transition-colors duration-300 group-hover:text-primary">
             {project.title}
+            <ArrowUpRight className="h-5 w-5 shrink-0 text-muted-foreground transition-all duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-primary" />
           </h3>
           <p className="text-muted-foreground mb-4 flex-1 text-sm leading-relaxed">
             {project.description}
@@ -152,7 +170,7 @@ const ProjectCard = ({ project, index, onOpen, isInView }: ProjectCardProps) => 
 
           {/* Tags */}
           <div className="flex flex-wrap gap-1.5">
-            {project.tags.map((tag: string, i: number) => (
+            {project.tags.slice(0, 5).map((tag: string, i: number) => (
               <motion.div
                 key={tag}
                 initial={{ opacity: 0, scale: 0.7 }}
@@ -168,12 +186,16 @@ const ProjectCard = ({ project, index, onOpen, isInView }: ProjectCardProps) => 
                 </Badge>
               </motion.div>
             ))}
+            {project.tags.length > 5 && (
+              <Badge variant="outline" className="text-xs border-border/60 text-muted-foreground">+{project.tags.length - 5}</Badge>
+            )}
           </div>
         </div>
       </div>
     </TiltCard>
   </motion.div>
-);
+  );
+};
 
 /* ─── Project Dialog ──────────────────────────────────────────── */
 const categoryColors: Record<string, string> = {
@@ -183,6 +205,7 @@ const categoryColors: Record<string, string> = {
 };
 
 const ProjectDialog = ({ project, onClose }: ProjectDialogProps) => {
+  const t = useUiText();
   if (!project) return null;
   const gradient = categoryColors[project.category] ?? "from-cyan-500 to-primary";
 
@@ -194,14 +217,18 @@ const ProjectDialog = ({ project, onClose }: ProjectDialogProps) => {
             <div className="max-w-7xl mx-auto space-y-6">
               <div className="grid lg:grid-cols-[1.15fr_0.85fr] gap-6 items-stretch">
                 <div className="relative min-h-[280px] md:min-h-[420px] lg:min-h-[520px] overflow-hidden rounded-3xl border border-primary/20">
-                  <motion.img
-                    src={project.image}
-                    alt={project.title}
-                    className="w-full h-full object-cover"
-                    initial={{ scale: 1.04 }}
-                    animate={{ scale: 1 }}
-                    transition={{ duration: 0.5, ease: "easeOut" }}
-                  />
+                  {project.image ? (
+                    <motion.img
+                      src={project.image}
+                      alt={project.title}
+                      className="absolute inset-0 w-full h-full object-cover"
+                      initial={{ scale: 1.04 }}
+                      animate={{ scale: 1 }}
+                      transition={{ duration: 0.5, ease: "easeOut" }}
+                    />
+                  ) : (
+                    <div className="absolute inset-0 bg-gradient-to-br from-primary/25 via-background to-secondary/25" />
+                  )}
                   <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
                   <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${gradient}`} />
 
@@ -211,7 +238,7 @@ const ProjectDialog = ({ project, onClose }: ProjectDialogProps) => {
                     </Badge>
                     {project.favorite && (
                       <Badge className="bg-gradient-to-r from-amber-400 to-orange-500 text-white border-0 shadow-lg gap-1 px-3 py-1">
-                        <Star className="w-3 h-3 fill-current" /> Featured
+                        <Star className="w-3 h-3 fill-current" /> {t("projects.featured", "Featured")}
                       </Badge>
                     )}
                   </div>
@@ -228,9 +255,9 @@ const ProjectDialog = ({ project, onClose }: ProjectDialogProps) => {
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-1 gap-4">
                   {[
-                    { label: "Category", value: project.category, icon: "🗂️" },
-                    { label: "Tech Stack", value: `${project.tags.length} tools`, icon: "⚙️" },
-                    { label: "Status", value: "Completed", icon: "✅" },
+                    { label: t("projects.category", "Category"), value: project.category, icon: "🗂️" },
+                    { label: t("projects.techStack", "Tech Stack"), value: t("projects.toolsCount", "{count} tools").replace("{count}", String(project.tags.length)), icon: "⚙️" },
+                    { label: t("projects.status", "Status"), value: t("projects.completed", "Completed"), icon: "✅" },
                   ].map((s, i) => (
                     <motion.div
                       key={i}
@@ -249,19 +276,21 @@ const ProjectDialog = ({ project, onClose }: ProjectDialogProps) => {
 
                   <div className="sm:col-span-3 lg:col-span-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3">
                     <Button
+                      disabled={!project.demo_url}
                       className={`w-full h-12 bg-gradient-to-r ${gradient} hover:opacity-90 text-white shadow-glow gap-2 font-semibold text-base`}
-                      onClick={() => window.open(project.demo, "_blank")}
+                      onClick={() => { void trackAnalyticsEvent("project_demo_click", { project_id: project.id }); window.open(project.demo_url, "_blank"); }}
                     >
                       <ExternalLink className="w-5 h-5" />
                       Live Demo
                     </Button>
                     <Button
                       variant="outline"
+                      disabled={!project.github_url}
                       className="w-full h-12 glass-card border-primary/30 hover:border-primary/60 hover:bg-primary/8 hover:text-primary gap-2 font-semibold text-base transition-all duration-300"
-                      onClick={() => window.open(project.github, "_blank")}
+                      onClick={() => { void trackAnalyticsEvent("project_github_click", { project_id: project.id }); window.open(project.github_url, "_blank"); }}
                     >
                       <Github className="w-5 h-5" />
-                      View Code
+                      {t("projects.viewCode", "View Code")}
                     </Button>
                   </div>
                 </div>
@@ -271,17 +300,17 @@ const ProjectDialog = ({ project, onClose }: ProjectDialogProps) => {
                 <div className="glass-card rounded-3xl border border-border/50 p-6 md:p-8">
                   <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-4 flex items-center gap-2">
                     <span className={`inline-block w-3 h-3 rounded-full bg-gradient-to-r ${gradient}`} />
-                    About this project
+                    {t("projects.aboutProject", "About this project")}
                   </h4>
                   <DialogDescription className="text-base md:text-lg text-foreground/90 leading-relaxed">
-                    {project.longDescription}
+                    {project.long_description}
                   </DialogDescription>
                 </div>
 
                 <div className="glass-card rounded-3xl border border-border/50 p-6 md:p-8">
                   <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-4 flex items-center gap-2">
                     <span className={`inline-block w-3 h-3 rounded-full bg-gradient-to-r ${gradient}`} />
-                    Tech Stack
+                    {t("projects.techStack", "Tech Stack")}
                   </h4>
                   <div className="flex flex-wrap gap-3">
                     {project.tags.map((tag: string, i: number) => (
@@ -312,17 +341,22 @@ const ProjectDialog = ({ project, onClose }: ProjectDialogProps) => {
 
 /* ─── Main Component ──────────────────────────────────────────── */
 const Projects = () => {
+  const t = useUiText();
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
   const [selectedProject, setSelectedProject] = useState<ProjectItem | null>(null);
-  const allProjects = getProjects();
+  const { projects: allProjects } = usePortfolio();
 
   const favoriteProjects = allProjects.filter(p => p.favorite);
-  const webProjects      = allProjects.filter(p => p.category === "web");
-  const mobileProjects   = allProjects.filter(p => p.category === "mobile");
+  const categories = Array.from(new Set(allProjects.map(p => p.category).filter(Boolean)));
+  const tabs = [
+    ...(favoriteProjects.length ? [{ value: "favorites", label: t("projects.featured", "Featured"), list: favoriteProjects }] : []),
+    { value: "all", label: t("projects.all", "All"), list: allProjects },
+    ...categories.map(c => ({ value: c, label: c, list: allProjects.filter(p => p.category === c) })),
+  ];
 
   return (
-    <section id="projects" className="py-24 bg-background relative overflow-hidden" ref={ref}>
+    <section id="projects" className="py-24 bg-muted/30 relative overflow-hidden" ref={ref}>
 
       {/* Ambient blobs */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
@@ -340,78 +374,40 @@ const Projects = () => {
 
       <div className="container mx-auto px-4 relative z-10">
 
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={isInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.7 }}
-          className="text-center mb-16"
-        >
-          <motion.div
-            initial={{ opacity: 0, scale: 0.5 }}
-            animate={isInView ? { opacity: 1, scale: 1 } : {}}
-            transition={{ duration: 0.5, type: "spring", bounce: 0.4 }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-card border border-primary/30 text-primary text-sm font-semibold mb-6"
-          >
-            <Layers className="w-4 h-4" />
-            Portfolio Showcase
-            <Sparkles className="w-4 h-4" />
-          </motion.div>
+        <SectionHeader
+          eyebrow={t("projects.eyebrow", "Portfolio showcase")}
+          icon={Layers}
+          title={t("projects.titlePrefix", "Featured")}
+          highlight={t("projects.title", "Projects")}
+          description={t("projects.description", "A selection of recent work and personal projects.")}
+        />
 
-          <h2 className="text-5xl md:text-6xl font-black mb-4 tracking-tight">
-            Featured{" "}
-            <span className="relative inline-block">
-              <span className="bg-gradient-to-r from-cyan-400 via-primary to-violet-500 bg-clip-text text-transparent">
-                Projects
-              </span>
-              <motion.div
-                className="absolute -bottom-1 left-0 right-0 h-1 bg-gradient-to-r from-cyan-400 to-violet-500 rounded-full"
-                initial={{ scaleX: 0 }}
-                animate={isInView ? { scaleX: 1 } : {}}
-                transition={{ duration: 0.8, delay: 0.5 }}
-              />
-            </span>
-          </h2>
-          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            A showcase of my recent work and personal projects
-          </p>
-        </motion.div>
-
-        {/* Tabs */}
-        <Tabs defaultValue="favorites" className="max-w-7xl mx-auto">
+        {allProjects.length === 0 ? (
+          <EmptyState icon={FolderGit2} title={t("projects.emptyTitle", "No projects yet")} description={t("projects.emptyDescription", "Projects added from the dashboard will appear here.")} />
+        ) : (
+        <Tabs defaultValue={tabs[0].value} className="max-w-7xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={isInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="flex justify-center mb-12"
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="mb-12 flex justify-center"
           >
-            <TabsList className="glass-card border border-border/50 p-1 rounded-2xl gap-1">
-              <TabsTrigger
-                value="favorites"
-                className="rounded-xl px-5 py-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-primary data-[state=active]:text-white data-[state=active]:shadow-glow transition-all duration-300 flex items-center gap-2"
-              >
-                <Star className="w-4 h-4" /> Favorites
-              </TabsTrigger>
-              <TabsTrigger
-                value="web"
-                className="rounded-xl px-5 py-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-primary data-[state=active]:text-white data-[state=active]:shadow-glow transition-all duration-300"
-              >
-                Web
-              </TabsTrigger>
-              <TabsTrigger
-                value="mobile"
-                className="rounded-xl px-5 py-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-primary data-[state=active]:text-white data-[state=active]:shadow-glow transition-all duration-300"
-              >
-                Mobile
-              </TabsTrigger>
+            <TabsList className="h-auto flex-wrap justify-center gap-1 rounded-3xl border border-border/60 bg-background/60 p-1 backdrop-blur-md sm:rounded-full">
+              {tabs.map(t => (
+                <TabsTrigger
+                  key={t.value}
+                  value={t.value}
+                  className="gap-2 rounded-full px-5 py-2 capitalize transition-all duration-300 data-[state=active]:bg-gradient-primary data-[state=active]:text-white data-[state=active]:shadow-glow"
+                >
+                  {t.value === "favorites" && <Star className="h-4 w-4" />}
+                  {t.label}
+                  <span className="rounded-full bg-foreground/10 px-1.5 text-[10px] font-bold">{t.list.length}</span>
+                </TabsTrigger>
+              ))}
             </TabsList>
           </motion.div>
 
-          {[
-            { value: "favorites", list: favoriteProjects },
-            { value: "web",       list: webProjects },
-            { value: "mobile",    list: mobileProjects },
-          ].map(({ value, list }) => (
+          {tabs.map(({ value, list }) => (
             <TabsContent key={value} value={value}>
               <AnimatePresence mode="wait">
                 <motion.div
@@ -420,22 +416,25 @@ const Projects = () => {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ duration: 0.35 }}
-                  className="grid md:grid-cols-2 lg:grid-cols-3 gap-8"
+                  className="grid grid-cols-1 justify-center gap-8 sm:grid-cols-[repeat(auto-fit,minmax(18rem,24rem))]"
                 >
                   {list.map((project, index) => (
+                    <div key={project.id} className={index >= 2 ? "hidden sm:block" : undefined}>
                     <ProjectCard
-                      key={project.id}
                       project={project}
                       index={index}
-                      onOpen={setSelectedProject}
+                      onOpen={(project) => { setSelectedProject(project); void trackAnalyticsEvent("project_detail_open", { project_id: project.id }); }}
                       isInView={isInView}
                     />
+                    </div>
                   ))}
                 </motion.div>
               </AnimatePresence>
             </TabsContent>
           ))}
         </Tabs>
+        )}
+        {allProjects.length > 0 && <SectionViewAll to="/projects" />}
       </div>
 
       <ProjectDialog project={selectedProject} onClose={() => setSelectedProject(null)} />

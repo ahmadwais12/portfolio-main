@@ -14,6 +14,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Slider } from '@/components/ui/slider';
 import { getSkills, saveSkills, type SkillItem } from '@/lib/store';
 import { toast } from 'sonner';
+import { LocalizedField } from '@/components/dashboard/LocalizedField';
+import { localizedValues, type ContentLanguage } from '@/lib/localization';
 
 const categories = ['Frontend', 'Backend', 'Mobile', 'Languages', 'DevOps', 'Design', 'Other'];
 
@@ -34,26 +36,39 @@ const SkillsManager = () => {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selected, setSelected] = useState<SkillItem | null>(null);
   const [form, setForm] = useState<Omit<SkillItem, 'id'>>({ name: '', category: 'Frontend', level: 80 });
+  const setLocalized = (field: string, language: ContentLanguage, value: string, syncBase = true) => setForm(current => ({
+    ...current,
+    [`${field}_${language}`]: value,
+    ...(language === 'en' && syncBase ? { [field]: value } : {}),
+  }));
 
-  const persist = (updated: SkillItem[]) => { setSkills(updated); saveSkills(updated); };
-
-  const handleSave = () => {
-    if (!form.name) { toast.error('Skill name is required'); return; }
-    if (selected) {
-      persist(skills.map(s => s.id === selected.id ? { ...s, ...form } : s));
-      toast.success('Skill updated');
-    } else {
-      persist([...skills, { ...form, id: Date.now().toString() }]);
-      toast.success('Skill added');
+  const [saving, setSaving] = useState(false);
+  const persist = async (updated: SkillItem[], message: string) => {
+    setSaving(true);
+    try {
+      await saveSkills(updated);
+      setSkills(updated);
+      toast.success(message);
+      return true;
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Unable to save skills');
+      return false;
+    } finally {
+      setSaving(false);
     }
-    setIsDialogOpen(false);
   };
 
-  const handleDelete = () => {
+  const handleSave = async () => {
+    if (!form.name) { toast.error('Skill name is required'); return; }
+    const saved = selected
+      ? await persist(skills.map(s => s.id === selected.id ? { ...s, ...form } : s), 'Skill updated')
+      : await persist([...skills, { ...form, id: crypto.randomUUID() }], 'Skill added');
+    if (saved) setIsDialogOpen(false);
+  };
+
+  const handleDelete = async () => {
     if (!selected) return;
-    persist(skills.filter(s => s.id !== selected.id));
-    toast.success('Skill deleted');
-    setIsDeleteOpen(false);
+    if (await persist(skills.filter(s => s.id !== selected.id), 'Skill deleted')) setIsDeleteOpen(false);
   };
 
   const openEdit = (s: SkillItem) => { setSelected(s); setForm(s); setIsDialogOpen(true); };
@@ -182,8 +197,7 @@ const SkillsManager = () => {
           </DialogHeader>
           <div className="space-y-5 py-2">
             <div className="space-y-2">
-              <Label className="text-muted-foreground">Skill Name *</Label>
-              <Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="e.g., React.js" className="glass-card border-0" />
+              <LocalizedField label="Skill Name" required value={localizedValues(form, 'name')} onChange={(language, value) => setLocalized('name', language, value)} placeholder="e.g., React.js" />
             </div>
             <div className="space-y-2">
               <Label className="text-muted-foreground">Category</Label>
@@ -194,6 +208,7 @@ const SkillsManager = () => {
                 </SelectContent>
               </Select>
             </div>
+            <LocalizedField label="Category Display Text" value={localizedValues(form, 'category')} onChange={(language, value) => setLocalized('category', language, value, false)} />
             <div className="space-y-3">
               <Label className="text-muted-foreground">Proficiency: <span className="font-bold text-foreground">{form.level}%</span></Label>
               <Slider value={[form.level]} onValueChange={([v]) => setForm({ ...form, level: v })} min={0} max={100} step={5} className="py-2" />
@@ -204,8 +219,8 @@ const SkillsManager = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleSave} className="bg-gradient-primary hover:opacity-90 shadow-glow">
-              {selected ? 'Save Changes' : 'Add Skill'}
+            <Button onClick={() => void handleSave()} disabled={saving} className="bg-gradient-primary hover:opacity-90 shadow-glow">
+              {saving ? 'Saving...' : selected ? 'Save Changes' : 'Add Skill'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -224,7 +239,7 @@ const SkillsManager = () => {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel className="border-0">Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-red-500 hover:bg-red-600 text-white">Delete</AlertDialogAction>
+            <AlertDialogAction onClick={(e) => { e.preventDefault(); void handleDelete(); }} disabled={saving} className="bg-red-500 hover:bg-red-600 text-white">Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

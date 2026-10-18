@@ -1,100 +1,191 @@
-import { motion, useInView } from "framer-motion";
-import { useRef } from "react";
-import { MapPin, Calendar, Code, Award } from "lucide-react";
-import { Card } from "@/components/ui/card";
-import { getAbout } from "@/lib/store";
-import profile from '../../public/profile.jpg';
+import { motion } from "framer-motion";
+import { MapPin, Calendar, Code, Award, Mail, Phone, UserRound, Download, ArrowRight, CheckCircle2 } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { SectionHeader } from "@/components/SectionHeader";
+import { usePortfolio } from "@/lib/store";
+import { initialsOf } from "@/lib/utils";
+import { useUiText, splitLocalizedList } from "@/lib/localization";
+import SectionViewAll from "@/components/SectionViewAll";
 
-const About = () => {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: "-100px" });
-  const data = getAbout();
+const About = ({ preview = false }: { preview?: boolean }) => {
+  const { about: data } = usePortfolio();
+  const t = useUiText();
+  const paragraphs = data.bio.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
+  const titles = splitLocalizedList(data.title.replace(/\|/g, ","));
+  const initials = initialsOf(data.full_name);
 
   const stats = [
-    { icon: Calendar, label: "Years Experience", value: data.years_experience },
-    { icon: Code, label: "Projects Completed", value: data.projects_completed },
-    { icon: Award, label: "Technologies", value: data.technologies },
-    { icon: MapPin, label: "Location", value: data.location },
-  ];
+    { icon: Calendar, label: t("about.yearsExperience", "Years Experience"), value: data.years_experience },
+    { icon: Code, label: t("about.projectsCompleted", "Projects Completed"), value: data.projects_completed },
+    { icon: Award, label: t("about.technologies", "Technologies"), value: data.technologies },
+  ].filter(s => s.value.trim());
+
+  const contacts = [
+    { icon: Mail, label: t("about.email", "Email"), value: data.email, href: data.email && `mailto:${data.email}` },
+    { icon: Phone, label: t("about.phone", "Phone"), value: data.phone, href: data.phone && `tel:${data.phone.replace(/\s+/g, "")}` },
+    { icon: MapPin, label: t("about.location", "Location"), value: data.location, href: "" },
+  ].filter(c => c.value.trim());
 
   return (
-    <section id="about" className="py-20 bg-background relative" ref={ref}>
-      <div className="container mx-auto px-4">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={isInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-16"
-        >
-          <h2 className="text-4xl md:text-5xl font-bold mb-4">
-            About <span className="bg-gradient-primary bg-clip-text text-transparent">Me</span>
-          </h2>
-          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Passionate developer with expertise in building modern web and mobile applications
-          </p>
-        </motion.div>
+    <section id="about" className="relative overflow-hidden bg-background py-24">
+      <div aria-hidden="true" className="pointer-events-none absolute -left-40 top-20 h-[28rem] w-[28rem] rounded-full bg-primary/10 blur-[120px]" />
 
-        <div className="grid md:grid-cols-2 gap-12 items-center max-w-6xl mx-auto">
+      <div className="container relative mx-auto px-4">
+        <SectionHeader
+          eyebrow={t("about.eyebrow", "Get to know me")}
+          icon={UserRound}
+          title={t("about.title", "About")}
+          highlight={t("about.highlight", "Me")}
+          description={preview ? undefined : titles.length ? `${titles.join(" · ")}` : t("about.description", "A little about who I am and what I do.")}
+        />
+
+        {preview ? (
           <motion.div
-            initial={{ opacity: 0, x: -50 }}
-            animate={isInView ? { opacity: 1, x: 0 } : {}}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="relative"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: 0.6 }}
+            className="mx-auto max-w-3xl text-center"
           >
-            <div className="relative w-full aspect-square max-w-md mx-auto group">
-              <div className="absolute inset-0 bg-gradient-primary rounded-2xl blur-3xl opacity-30 animate-glow" />
-              <div className="absolute inset-0 bg-gradient-secondary rounded-2xl blur-2xl opacity-20 animate-pulse-slow" />
-              <div className="relative w-full h-full rounded-2xl overflow-hidden border-4 border-primary/20 shadow-glow-lg glass-card group-hover:border-primary/40 transition-all duration-500 hover-lift">
-                <img src={profile} alt={data.full_name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
-                <div className="absolute inset-0 bg-gradient-to-t from-primary/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              </div>
-              <div className="absolute -top-3 -right-3 w-24 h-24 border-t-4 border-r-4 border-primary/30 rounded-tr-2xl" />
-              <div className="absolute -bottom-3 -left-3 w-24 h-24 border-b-4 border-l-4 border-secondary/30 rounded-bl-2xl" />
+            <p className="text-lg leading-relaxed text-muted-foreground">
+              {paragraphs[0] || t("about.bioFallback", "Add your bio from the dashboard to introduce yourself here.")}
+            </p>
+            <SectionViewAll to="/about" />
+          </motion.div>
+        ) : (
+        <div className="mx-auto grid max-w-6xl items-center gap-14 lg:grid-cols-[0.9fr_1.1fr]">
+          {/* Portrait */}
+          <motion.div
+            initial={{ opacity: 0, x: -40 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+            className="relative mx-auto w-full max-w-sm"
+          >
+            <div className="absolute -inset-4 rounded-[2rem] bg-gradient-primary opacity-20 blur-2xl" />
+            <div className="absolute -right-4 -top-4 h-full w-full rounded-[2rem] border-2 border-primary/30" />
+            <div className="group relative aspect-[4/5] overflow-hidden rounded-[2rem] border border-border/60 bg-card shadow-elevated">
+              {data.avatar_url ? (
+                <img
+                  src={data.avatar_url}
+                  alt={data.full_name || t("about.profilePhoto", "Profile photo")}
+                  className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/20 via-background to-secondary/20">
+                  {initials
+                    ? <span className="bg-gradient-primary bg-clip-text text-8xl font-extrabold text-transparent">{initials}</span>
+                    : <UserRound className="h-24 w-24 text-primary/50" />}
+                </div>
+              )}
+              <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-background/80 to-transparent" />
             </div>
+
+            {data.years_experience && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.4, type: "spring", bounce: 0.4 }}
+                className="absolute -bottom-6 -left-4 rounded-2xl border border-border/60 bg-background/90 px-5 py-4 shadow-xl backdrop-blur-md sm:-left-8"
+              >
+                <p className="bg-gradient-primary bg-clip-text text-3xl font-extrabold text-transparent">{data.years_experience}</p>
+                <p className="text-xs font-medium text-muted-foreground">Years of experience</p>
+              </motion.div>
+            )}
           </motion.div>
 
+          {/* Details */}
           <motion.div
-            initial={{ opacity: 0, x: 50 }}
-            animate={isInView ? { opacity: 1, x: 0 } : {}}
-            transition={{ duration: 0.6, delay: 0.4 }}
-            className="space-y-6"
+            initial={{ opacity: 0, x: 40 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: 0.7, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+            className="space-y-8"
           >
             <div>
-              <h3 className="text-3xl font-bold mb-4">
-                <span className="bg-gradient-primary bg-clip-text text-transparent">{data.title}</span>
+              <h3 className="mb-4 text-2xl font-bold sm:text-3xl">
+                {data.full_name ? <>{t("about.im", "I'm {name}").split("{name}")[0]}<span className="text-gradient">{data.full_name}</span></> : t("about.whoIAm", "Who I am")}
               </h3>
-              {data.bio.split('\n\n').map((para, i) => (
-                <p key={i} className="text-muted-foreground leading-relaxed mt-4 first:mt-0">{para}</p>
-              ))}
-              <div className="mt-4 space-y-2">
-                <p className="text-muted-foreground">
-                  <span className="font-semibold text-foreground">Email:</span> {data.email}
-                </p>
-                <p className="text-muted-foreground">
-                  <span className="font-semibold text-foreground">Phone:</span> {data.phone}
-                </p>
-              </div>
+              {paragraphs.length ? (
+                paragraphs.map((para, i) => (
+                  <p key={i} className="mt-4 leading-relaxed text-muted-foreground first:mt-0">{para}</p>
+                ))
+              ) : (
+                <p className="leading-relaxed text-muted-foreground">{t("about.bioFallback", "Add your bio from the dashboard to introduce yourself here.")}</p>
+              )}
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              {stats.map((stat, index) => (
-                <motion.div
-                  key={stat.label}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={isInView ? { opacity: 1, y: 0 } : {}}
-                  transition={{ duration: 0.6, delay: 0.6 + index * 0.1 }}
-                >
-                  <Card className="p-6 glass-card hover:border-primary/50 transition-all hover-lift group relative overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-primary opacity-0 group-hover:opacity-10 transition-opacity duration-300" />
-                    <stat.icon className="w-10 h-10 text-primary mb-3 group-hover:scale-110 transition-transform duration-300" />
-                    <p className="text-3xl font-bold mb-1 text-gradient">{stat.value}</p>
-                    <p className="text-sm text-muted-foreground">{stat.label}</p>
-                  </Card>
-                </motion.div>
-              ))}
+            {titles.length > 1 && (
+              <ul className="grid gap-2 sm:grid-cols-2">
+                {titles.map(t => (
+                  <li key={t} className="flex items-center gap-2 text-sm font-medium">
+                    <CheckCircle2 className="h-4 w-4 shrink-0 text-primary" />
+                    {t}
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {contacts.length > 0 && (
+              <div className="grid gap-3 sm:grid-cols-2">
+                {contacts.map(c => {
+                  const content = (
+                    <>
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-gradient-primary group-hover:text-white">
+                        <c.icon className="h-4 w-4" />
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block text-xs text-muted-foreground">{c.label}</span>
+                        <span className="block truncate text-sm font-semibold">{c.value}</span>
+                      </span>
+                    </>
+                  );
+                  const cls = "group flex items-center gap-3 rounded-2xl border border-border/60 bg-card/60 p-3 backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:border-primary/40";
+                  return c.href
+                    ? <a key={c.label} href={c.href} className={cls}>{content}</a>
+                    : <div key={c.label} className={cls}>{content}</div>;
+                })}
+              </div>
+            )}
+
+            {stats.length > 0 && (
+              <div className="grid grid-cols-3 gap-3">
+                {stats.map((stat, index) => (
+                  <motion.div
+                    key={stat.label}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.5, delay: 0.2 + index * 0.1 }}
+                    className="group relative overflow-hidden rounded-2xl border border-border/60 bg-card/60 p-4 text-center backdrop-blur-sm transition-all hover:-translate-y-1 hover:border-primary/40 hover:shadow-glow"
+                  >
+                    <stat.icon className="mx-auto mb-2 h-6 w-6 text-primary transition-transform group-hover:scale-110" />
+                    <p className="text-2xl font-extrabold text-gradient sm:text-3xl">{stat.value}</p>
+                    <p className="text-[11px] font-medium text-muted-foreground sm:text-xs">{stat.label}</p>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+
+            <div className="flex flex-wrap gap-3">
+              <Button asChild size="lg" className="h-12 rounded-full bg-gradient-primary px-7 font-semibold text-white shadow-glow hover:opacity-95">
+                <Link to="/contact">
+                  {t("about.workTogether", "Let's work together")} <ArrowRight className="ml-1 h-4 w-4" />
+                </Link>
+              </Button>
+              {data.resume_url && (
+                <Button asChild size="lg" variant="outline" className="h-12 rounded-full border-primary/40 px-7 font-semibold hover:bg-primary/10">
+                  <a href={data.resume_url} target="_blank" rel="noopener noreferrer">
+                    <Download className="mr-1 h-4 w-4" /> {t("about.downloadCv", "Download CV")}
+                  </a>
+                </Button>
+              )}
             </div>
           </motion.div>
         </div>
+        )}
       </div>
     </section>
   );

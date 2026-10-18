@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, Moon, Sun, X } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { ArrowUpRight, Menu, Moon, Sun, X } from "lucide-react";
 import { useTheme } from "next-themes";
 
-import { Button } from "@/components/ui/button";
-import { getAbout } from "@/lib/store";
+import { usePortfolio } from "@/lib/store";
+import { useUiText } from "@/lib/localization";
 
 type NavItem = {
   name: string;
@@ -22,134 +23,176 @@ const navItems: NavItem[] = [
   { name: "Contact", path: "/contact" },
 ];
 
+const iconButton =
+  "relative flex h-10 w-10 items-center justify-center rounded-full border border-border/60 bg-background/40 text-foreground/80 transition-colors hover:border-primary/60 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60";
+
 const Navbar = () => {
-  const about = getAbout();
+  const { about } = usePortfolio();
+  const t = useUiText();
   const location = useLocation();
-  const { theme, setTheme } = useTheme();
+  const { resolvedTheme, setTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
 
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 50);
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-    };
+    const handleScroll = () => setScrolled(window.scrollY > 24);
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const toggleTheme = () => {
-    setTheme(theme === "dark" ? "light" : "dark");
-  };
+  useEffect(() => {
+    setIsOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setIsOpen(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isOpen]);
 
   const isActivePath = (path: string) => location.pathname === path;
+  const brandName = about.full_name.trim() || "Portfolio";
+
+  const themeToggle = (
+    <button
+      type="button"
+      onClick={() => setTheme(isDark ? "light" : "dark")}
+      className={iconButton}
+      aria-label={isDark ? t("nav.switchToLightTheme", "Switch to light theme") : t("nav.switchToDarkTheme", "Switch to dark theme")}
+    >
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.span
+          key={isDark ? "sun" : "moon"}
+          initial={{ rotate: -90, scale: 0, opacity: 0 }}
+          animate={{ rotate: 0, scale: 1, opacity: 1 }}
+          exit={{ rotate: 90, scale: 0, opacity: 0 }}
+          transition={{ duration: 0.25 }}
+        >
+          {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+        </motion.span>
+      </AnimatePresence>
+    </button>
+  );
 
   return (
-    <nav className="fixed left-0 right-0 top-0 z-50 px-4 pt-3">
+    <nav className="fixed inset-x-0 top-0 z-50 px-3 pt-3 sm:px-4" aria-label={t("nav.mainNavigation", "Main navigation")}>
       <div
-        className={`relative mx-auto max-w-7xl rounded-2xl ${
-          scrolled ? "backdrop-blur-md shadow-lg" : "backdrop-blur-sm"
+        className={`relative mx-auto max-w-7xl overflow-hidden rounded-2xl border transition-all duration-500 ${
+          scrolled || isOpen
+            ? "border-border/60 bg-background/75 shadow-[0_10px_40px_-12px_hsl(var(--primary)/0.35)] backdrop-blur-xl"
+            : "border-white/10 bg-background/30 backdrop-blur-md"
         }`}
       >
-        <div
-          className={`absolute bottom-0 left-4 right-4 h-[2px] rounded-full ${
-            scrolled ? "bg-primary/60" : "bg-primary/25"
-          }`}
-        />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/60 to-transparent" />
 
-        <div className="container mx-auto px-4">
-          <div className="flex h-14 items-center justify-between md:h-16">
-            <Link to="/" className="group flex items-center gap-3">
-              <div className="relative">
-                <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-primary to-secondary opacity-40 blur-sm" />
-                <img
-                  src="/logo.png"
-                  alt="Logo"
-                  className="relative h-10 w-10 rounded-xl object-cover ring-2 ring-primary/30"
-                />
-              </div>
-
-              <span className="bg-gradient-primary bg-clip-text text-xl font-bold tracking-tight text-transparent md:text-2xl">
-                {about.full_name}
+        <div className="flex h-16 items-center justify-between gap-4 px-3 sm:px-5">
+          <Link to="/" className="group flex min-w-0 items-center gap-3" aria-label={`${brandName} – home`}>
+            <div className="min-w-0 leading-tight">
+              <span className="block truncate bg-gradient-primary bg-clip-text text-lg font-bold tracking-tight text-transparent sm:text-xl">
+                {brandName}
               </span>
-            </Link>
+            </div>
+          </Link>
 
-            <div className="hidden items-center gap-1 md:flex">
-              {navItems.map((item) => (
-                <Link key={item.path} to={item.path}>
-                  <div className="relative overflow-hidden rounded-lg px-3 py-1.5">
-                    {isActivePath(item.path) && (
-                      <div className="absolute bottom-0 left-2 right-2 h-[2px] rounded-full bg-primary" />
-                    )}
-
-                    <span
-                      className={`relative z-10 text-sm font-medium ${
-                        isActivePath(item.path) ? "text-primary" : "text-foreground/70 hover:text-primary"
-                      }`}
-                    >
-                      {item.name}
-                    </span>
-                  </div>
+          <div className="hidden items-center rounded-full border border-border/50 bg-background/40 p-1 lg:flex">
+            {navItems.map((item) => {
+              const active = isActivePath(item.path);
+              return (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  aria-current={active ? "page" : undefined}
+                  className={`relative rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors xl:px-4 ${
+                    active ? "text-primary-foreground" : "text-foreground/70 hover:text-foreground"
+                  }`}
+                >
+                  {active && (
+                    <motion.span
+                      layoutId="nav-active-pill"
+                      className="absolute inset-0 rounded-full bg-gradient-primary shadow-glow"
+                      transition={{ type: "spring", stiffness: 380, damping: 32 }}
+                    />
+                  )}
+                  <span className="relative z-10">{t(`nav.${item.name.toLowerCase()}`, item.name)}</span>
                 </Link>
-              ))}
-
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={toggleTheme}
-                className="ml-2 rounded-full border border-border/50 text-foreground/70 transition-none hover:border-primary/50 hover:bg-transparent hover:text-primary active:bg-transparent focus:bg-transparent"
-              >
-                {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-              </Button>
-            </div>
-
-            <div className="flex items-center gap-2 md:hidden">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={toggleTheme}
-                className="rounded-full border border-border/50 text-foreground/70 transition-none hover:border-primary/50 hover:bg-transparent hover:text-primary active:bg-transparent focus:bg-transparent"
-              >
-                {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-              </Button>
-
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setIsOpen((prev) => !prev)}
-                className="rounded-full border border-border/50 text-foreground/70 transition-none hover:border-primary/50 hover:bg-transparent hover:text-primary active:bg-transparent focus:bg-transparent"
-              >
-                {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-              </Button>
-            </div>
+              );
+            })}
           </div>
 
-          {isOpen && (
-            <div className="px-4 md:hidden">
-              <div className="flex flex-col gap-1 pb-4 pt-2">
-                {navItems.map((item) => (
-                  <Link key={item.path} to={item.path} onClick={() => setIsOpen(false)}>
-                    <div
-                      className={`flex items-center gap-3 rounded-xl px-4 py-2.5 ${
-                        isActivePath(item.path)
-                          ? "rounded-b-none border-b-2 border-primary/50 text-primary"
-                          : "text-foreground/70 hover:text-primary"
-                      }`}
-                    >
-                      <span className="text-sm font-medium">{item.name}</span>
-                      {isActivePath(item.path) && (
-                        <div className="ml-auto h-1.5 w-1.5 rounded-full bg-primary" />
-                      )}
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          )}
+          <div className="flex shrink-0 items-center gap-2">
+            {themeToggle}
+
+            <Link
+              to="/contact"
+              className="group hidden items-center gap-1.5 rounded-full bg-gradient-primary px-4 py-2 text-sm font-semibold text-white shadow-glow transition-transform hover:scale-[1.03] sm:flex"
+            >
+              {t("nav.hireMe", "Hire Me")}
+              <ArrowUpRight className="h-4 w-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+            </Link>
+
+            <button
+              type="button"
+              onClick={() => setIsOpen((prev) => !prev)}
+              className={`${iconButton} lg:hidden`}
+              aria-label={isOpen ? t("nav.closeMenu", "Close menu") : t("nav.openMenu", "Open menu")}
+              aria-expanded={isOpen}
+              aria-controls="mobile-nav"
+            >
+              {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
+          </div>
         </div>
+
+        <AnimatePresence initial={false}>
+          {isOpen && (
+            <motion.div
+              id="mobile-nav"
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+              className="overflow-hidden lg:hidden"
+            >
+              <div className="grid grid-cols-2 gap-2 border-t border-border/50 px-3 pb-4 pt-3 sm:grid-cols-4 sm:px-5">
+                {navItems.map((item, i) => {
+                  const active = isActivePath(item.path);
+                  return (
+                    <motion.div
+                      key={item.path}
+                      initial={{ opacity: 0, y: -8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.03 * i }}
+                    >
+                      <Link
+                        to={item.path}
+                        aria-current={active ? "page" : undefined}
+                        className={`flex items-center justify-between rounded-xl border px-4 py-3 text-sm font-medium transition-colors ${
+                          active
+                            ? "border-primary/50 bg-primary/10 text-primary"
+                            : "border-border/50 bg-background/40 text-foreground/80 hover:border-primary/40 hover:text-primary"
+                        }`}
+                      >
+                        {t(`nav.${item.name.toLowerCase()}`, item.name)}
+                        {active && <span className="h-1.5 w-1.5 rounded-full bg-primary shadow-glow" />}
+                      </Link>
+                    </motion.div>
+                  );
+                })}
+                <Link
+                  to="/contact"
+                  className="col-span-2 mt-1 flex items-center justify-center gap-2 rounded-xl bg-gradient-primary px-4 py-3 text-sm font-semibold text-white shadow-glow sm:hidden"
+                >
+                  {t("nav.hireMe", "Hire Me")} <ArrowUpRight className="h-4 w-4" />
+                </Link>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
       </div>
     </nav>
   );

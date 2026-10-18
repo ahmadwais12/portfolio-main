@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import PageLoader from '@/components/PageLoader';
 import { AdminLoginSkeleton } from '@/components/Skeletons';
 import { Lock, Mail, Sparkles, Eye, EyeOff, ArrowRight } from 'lucide-react';
@@ -8,34 +9,96 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { toast } from 'sonner';
+import { supabase } from '@/lib/supabase';
 
 interface AdminLoginProps {
   onLogin: () => void;
 }
+
+/** Translate Supabase auth errors into messages that are safe and useful to show. */
+const friendlyAuthError = (message?: string) => {
+  const msg = (message ?? '').toLowerCase();
+  if (msg.includes('invalid login credentials')) return 'Incorrect email or password.';
+  if (msg.includes('email not confirmed')) return 'Please confirm your email before signing in.';
+  if (msg.includes('rate limit') || msg.includes('too many') || msg.includes('security purposes'))
+    return 'Too many attempts. Please wait a moment and try again.';
+  if (msg.includes('failed to fetch') || msg.includes('network'))
+    return 'Could not reach the sign-in service. Check your connection and try again.';
+  return message || 'Unable to sign in. Please try again.';
+};
 
 const AdminLogin = ({ onLogin }: AdminLoginProps) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  // True while an existing Supabase session is being restored on mount.
+  const [isRestoring, setIsRestoring] = useState(true);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const onLoginRef = useRef(onLogin);
+  onLoginRef.current = onLogin;
+
+  // Restore an existing session: signed-in admins skip the form entirely,
+  // any other stored session is cleared so the page stays a clean login form.
+  useEffect(() => {
+    let cancelled = false;
+
+    const restore = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (cancelled) return;
+      if (!session) {
+        setIsRestoring(false);
+        return;
+      }
+
+      const { data: isAdmin, error: accessError } = await supabase.rpc('is_analytics_admin');
+      if (cancelled) return;
+      if (!accessError && isAdmin) {
+        onLoginRef.current();
+        return;
+      }
+
+      await supabase.auth.signOut();
+      if (!cancelled) setIsRestoring(false);
+    };
+
+    void restore();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isLoading) return;
     setIsLoading(true);
 
-    // Simulate login delay
-    setTimeout(() => {
-      // For demo purposes, accept any email/password
-      // In production, replace with actual authentication
-      if (email === 'ahmadwaissarwari@gmail.com' && password === 'wais@admin@1234') {
-        toast.success('Welcome back!');
-        onLogin();
-      } else {
-        toast.error('Invalid email or password');
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error || !data.user) {
+        toast.error(friendlyAuthError(error?.message));
+        return;
       }
+
+      const { data: isAdmin, error: accessError } = await supabase.rpc('is_analytics_admin');
+      if (accessError || !isAdmin) {
+        await supabase.auth.signOut();
+        toast.error(
+          accessError
+            ? 'Could not verify admin access. Please try again in a moment.'
+            : 'This account is not authorized for the admin dashboard.'
+        );
+        return;
+      }
+
+      toast.success('Welcome back!');
+      onLogin();
+    } catch {
+      toast.error('Unable to sign in. Please check your connection and try again.');
+    } finally {
       setIsLoading(false);
-    }, 1000);
-  };
+    }
+  }, [email, password, isLoading, onLogin]);
 
   return (
     <PageLoader skeleton={<AdminLoginSkeleton />} delay={500}>
@@ -142,10 +205,10 @@ const AdminLogin = ({ onLogin }: AdminLoginProps) => {
               >
                 <Button
                   type="submit"
-                  disabled={isLoading}
+                  disabled={isLoading || isRestoring}
                   className="w-full h-12 bg-gradient-primary hover:opacity-90 shadow-glow text-white font-semibold gap-2"
                 >
-                  {isLoading ? (
+                  {isLoading || isRestoring ? (
                     <motion.div
                       animate={{ rotate: 360 }}
                       transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
@@ -159,9 +222,17 @@ const AdminLogin = ({ onLogin }: AdminLoginProps) => {
                     </>
                   )}
                 </Button>
+                {isRestoring && (
+                  <p className="text-center text-xs text-muted-foreground">
+                    Checking your session…
+                  </p>
+                )}
               </motion.div>
             </form>
-
+            <p className="pt-2 text-center text-sm text-muted-foreground">
+              Need an account?{' '}
+              <Link to="/admin/create-user" className="font-medium text-primary hover:underline">Create user</Link>
+            </p>
 
           </CardContent>
         </Card>

@@ -38,68 +38,29 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { supabase, type Project } from '@/lib/supabase';
+import { FileUploadField } from '@/components/FileUploadField';
+import { getProjects, saveProjects, type ProjectItem as Project } from '@/lib/store';
 import { toast } from 'sonner';
-
-// Dummy data for preview
-const dummyProjects: Project[] = [
-  {
-    id: '1',
-    title: 'E-Commerce Platform',
-    description: 'Full-stack e-commerce solution with React, Node.js, and MongoDB',
-    long_description: 'A comprehensive e-commerce platform featuring user authentication, product management, shopping cart functionality, payment integration with Stripe, and an admin dashboard.',
-    image: 'https://images.unsplash.com/photo-1661956602116-aa6865609028?w=800&h=600&fit=crop',
-    tags: ['React', 'Node.js', 'MongoDB', 'Stripe'],
-    category: 'web',
-    favorite: true,
-    github_url: 'https://github.com',
-    demo_url: 'https://demo.com',
-    created_at: '2024-01-15',
-  },
-  {
-    id: '2',
-    title: 'Task Management App',
-    description: 'Collaborative task management tool built with MERN stack',
-    long_description: 'Real-time collaborative task management application with team workspaces, real-time updates using Socket.io, and progress tracking.',
-    image: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=800&h=600&fit=crop',
-    tags: ['React', 'Express', 'MongoDB', 'Socket.io'],
-    category: 'web',
-    favorite: false,
-    github_url: 'https://github.com',
-    demo_url: 'https://demo.com',
-    created_at: '2024-02-20',
-  },
-  {
-    id: '3',
-    title: 'Fitness Tracking Mobile App',
-    description: 'Flutter-based fitness tracker with workout plans and progress monitoring',
-    long_description: 'Cross-platform mobile fitness application with customizable workout plans, exercise tracking, and progress visualization.',
-    image: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=800&h=600&fit=crop',
-    tags: ['Flutter', 'Dart', 'Firebase'],
-    category: 'mobile',
-    favorite: true,
-    github_url: 'https://github.com',
-    demo_url: 'https://demo.com',
-    created_at: '2024-03-10',
-  },
-  {
-    id: '4',
-    title: 'Weather Forecast App',
-    description: 'Mobile weather app with real-time forecasts and beautiful UI',
-    long_description: 'Beautiful weather forecast application featuring real-time weather data, 7-day forecasts, and location-based weather.',
-    image: 'https://images.unsplash.com/photo-1592210454359-9043f067919b?w=800&h=600&fit=crop',
-    tags: ['Flutter', 'OpenWeather API', 'Animations'],
-    category: 'mobile',
-    favorite: false,
-    github_url: 'https://github.com',
-    demo_url: 'https://demo.com',
-    created_at: '2024-03-25',
-  },
-];
+import { LocalizedField } from '@/components/dashboard/LocalizedField';
+import { localizedValues, splitLocalizedList, type ContentLanguage } from '@/lib/localization';
 
 const ProjectsManager = () => {
-  const [projects, setProjects] = useState<Project[]>(dummyProjects);
-  const [loading, setLoading] = useState(false);
+  const [projects, setProjects] = useState<Project[]>(getProjects());
+  const [saving, setSaving] = useState(false);
+  const persistProjects = async (updated: Project[], message: string) => {
+    setSaving(true);
+    try {
+      await saveProjects(updated);
+      setProjects(updated);
+      toast.success(message);
+      return true;
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Unable to save projects');
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  };
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -117,28 +78,23 @@ const ProjectsManager = () => {
     github_url: '',
     demo_url: '',
   });
+  const setLocalized = (field: string, language: ContentLanguage, value: string, syncBase = true) => setFormData(current => ({
+    ...current,
+    [`${field}_${language}`]: field === 'tags' ? splitLocalizedList(value) : value,
+    ...(language === 'en' && syncBase ? { [field]: field === 'tags' ? splitLocalizedList(value) : value } : {}),
+  }));
 
-  const handleSave = () => {
-    if (selectedProject?.id) {
-      setProjects(projects.map(p => p.id === selectedProject.id ? { ...p, ...formData } as Project : p));
-      toast.success('Project updated successfully');
-    } else {
-      const newProject: Project = {
-        ...formData as Project,
-        id: Date.now().toString(),
-        created_at: new Date().toISOString(),
-      };
-      setProjects([newProject, ...projects]);
-      toast.success('Project created successfully');
-    }
-    setIsDialogOpen(false);
+  const handleSave = async () => {
+    if (!formData.title?.trim()) { toast.error('Title is required'); return; }
+    const saved = selectedProject?.id
+      ? await persistProjects(projects.map(p => p.id === selectedProject.id ? { ...p, ...formData } as Project : p), 'Project updated successfully')
+      : await persistProjects([{ ...formData as Project, id: crypto.randomUUID() }, ...projects], 'Project created successfully');
+    if (saved) setIsDialogOpen(false);
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!selectedProject?.id) return;
-    setProjects(projects.filter(p => p.id !== selectedProject.id));
-    toast.success('Project deleted successfully');
-    setIsDeleteDialogOpen(false);
+    if (await persistProjects(projects.filter(p => p.id !== selectedProject.id), 'Project deleted successfully')) setIsDeleteDialogOpen(false);
   };
 
   const openEditDialog = (project: Project) => {
@@ -330,7 +286,7 @@ const ProjectsManager = () => {
                       <Button
                         variant="secondary"
                         size="sm"
-                        className="flex-1 bg-white/90 backdrop-blur-sm"
+                        className="flex-1 bg-background/90 text-foreground backdrop-blur-sm hover:bg-background"
                         onClick={() => window.open(project.github_url, '_blank')}
                       >
                         <Github className="w-4 h-4 mr-2" />
@@ -339,7 +295,7 @@ const ProjectsManager = () => {
                       <Button
                         variant="secondary"
                         size="sm"
-                        className="flex-1 bg-white/90 backdrop-blur-sm"
+                        className="flex-1 bg-background/90 text-foreground backdrop-blur-sm hover:bg-background"
                         onClick={() => window.open(project.demo_url, '_blank')}
                       >
                         <ExternalLink className="w-4 h-4 mr-2" />
@@ -479,7 +435,7 @@ const ProjectsManager = () => {
 
       {/* Add/Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto glass-card border-0">
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto glass-card border-0">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-2xl">
               <div className="p-2 rounded-lg bg-gradient-primary">
@@ -489,16 +445,8 @@ const ProjectsManager = () => {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-5 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-muted-foreground">Title *</Label>
-                <Input
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  placeholder="Project title"
-                  className="glass-card border-0"
-                />
-              </div>
+            <LocalizedField label="Title" required value={localizedValues(formData, 'title')} onChange={(language, value) => setLocalized('title', language, value)} placeholder="Project title" />
+            <div className="space-y-4">
               <div className="space-y-2">
                 <Label className="text-muted-foreground">Category</Label>
                 <Select
@@ -517,38 +465,19 @@ const ProjectsManager = () => {
                   </SelectContent>
                 </Select>
               </div>
+              <LocalizedField label="Category Display Text" value={localizedValues(formData, 'category')} onChange={(language, value) => setLocalized('category', language, value, false)} />
             </div>
 
-            <div className="space-y-2">
-              <Label className="text-muted-foreground">Short Description *</Label>
-              <Input
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Brief description"
-                className="glass-card border-0"
-              />
-            </div>
+            <LocalizedField label="Short Description" required value={localizedValues(formData, 'description')} onChange={(language, value) => setLocalized('description', language, value)} placeholder="Brief description" />
+            <LocalizedField label="Long Description" value={localizedValues(formData, 'long_description')} onChange={(language, value) => setLocalized('long_description', language, value)} multiline rows={4} placeholder="Detailed project description" />
 
-            <div className="space-y-2">
-              <Label className="text-muted-foreground">Long Description</Label>
-              <Textarea
-                value={formData.long_description}
-                onChange={(e) => setFormData({ ...formData, long_description: e.target.value })}
-                placeholder="Detailed project description"
-                rows={4}
-                className="glass-card border-0 resize-none"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-muted-foreground">Image URL *</Label>
-              <Input
-                value={formData.image}
-                onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                placeholder="https://..."
-                className="glass-card border-0"
-              />
-            </div>
+            <FileUploadField
+              label="Project Image"
+              value={formData.image || ''}
+              onChange={(url) => setFormData(prev => ({ ...prev, image: url }))}
+              bucket="portfolio-assets"
+              prefix="project"
+            />
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -571,20 +500,7 @@ const ProjectsManager = () => {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label className="text-muted-foreground">Tags (comma-separated)</Label>
-              <Input
-                value={formData.tags?.join(', ')}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    tags: e.target.value.split(',').map((t) => t.trim()).filter(Boolean),
-                  })
-                }
-                placeholder="React, TypeScript, Node.js"
-                className="glass-card border-0"
-              />
-            </div>
+            <LocalizedField label="Tags (comma-separated)" value={localizedValues(formData, 'tags')} onChange={(language, value) => setLocalized('tags', language, value)} placeholder="React, TypeScript, Node.js" />
 
             <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
               <Switch
@@ -602,10 +518,11 @@ const ProjectsManager = () => {
               Cancel
             </Button>
             <Button
-              onClick={handleSave}
+              onClick={() => void handleSave()}
+              disabled={saving}
               className="bg-gradient-primary hover:opacity-90 shadow-glow"
             >
-              {selectedProject ? 'Save Changes' : 'Create Project'}
+              {saving ? 'Saving...' : selectedProject ? 'Save Changes' : 'Create Project'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -629,7 +546,8 @@ const ProjectsManager = () => {
           <AlertDialogFooter>
             <AlertDialogCancel className="border-0">Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleDelete}
+              onClick={(e) => { e.preventDefault(); void handleDelete(); }}
+              disabled={saving}
               className="bg-red-500 hover:bg-red-600 text-white"
             >
               Delete

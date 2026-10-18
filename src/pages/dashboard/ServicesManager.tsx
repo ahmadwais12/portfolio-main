@@ -26,36 +26,10 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { supabase, type Service } from '@/lib/supabase';
+import { getServices, saveServices, type ServiceItem as Service } from '@/lib/store';
 import { toast } from 'sonner';
-
-// Dummy data
-const dummyServices: Service[] = [
-  {
-    id: '1',
-    title: 'Web Development',
-    description: 'Full-stack web development using modern technologies like React, Node.js, and more.',
-    icon: 'Code',
-    features: ['Responsive Design', 'API Integration', 'Database Setup', 'Deployment'],
-    created_at: '2024-01-15',
-  },
-  {
-    id: '2',
-    title: 'Mobile Apps',
-    description: 'Cross-platform mobile application development with Flutter and React Native.',
-    icon: 'Smartphone',
-    features: ['iOS & Android', 'Native Features', 'Push Notifications', 'App Store Publish'],
-    created_at: '2024-02-20',
-  },
-  {
-    id: '3',
-    title: 'UI/UX Design',
-    description: 'Beautiful and intuitive user interface design for web and mobile applications.',
-    icon: 'Palette',
-    features: ['Wireframing', 'Prototyping', 'User Research', 'Design Systems'],
-    created_at: '2024-03-10',
-  },
-];
+import { LocalizedField } from '@/components/dashboard/LocalizedField';
+import { localizedValues, splitLocalizedList, type ContentLanguage } from '@/lib/localization';
 
 const iconMap: Record<string, React.ElementType> = {
   Code,
@@ -66,8 +40,22 @@ const iconMap: Record<string, React.ElementType> = {
 };
 
 const ServicesManager = () => {
-  const [services, setServices] = useState<Service[]>(dummyServices);
-  const [loading, setLoading] = useState(false);
+  const [services, setServices] = useState<Service[]>(getServices());
+  const [saving, setSaving] = useState(false);
+  const persistServices = async (updated: Service[], message: string) => {
+    setSaving(true);
+    try {
+      await saveServices(updated);
+      setServices(updated);
+      toast.success(message);
+      return true;
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Unable to save services');
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  };
   const [searchQuery, setSearchQuery] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -78,29 +66,23 @@ const ServicesManager = () => {
     icon: 'Code',
     features: [],
   });
-  const [featureInput, setFeatureInput] = useState('');
+  const setLocalized = (field: string, language: ContentLanguage, value: string) => setFormData(current => ({
+    ...current,
+    [`${field}_${language}`]: field === 'features' ? splitLocalizedList(value) : value,
+    ...(language === 'en' ? { [field]: field === 'features' ? splitLocalizedList(value) : value } : {}),
+  }));
 
-  const handleSave = () => {
-    if (selectedService?.id) {
-      setServices(services.map(s => s.id === selectedService.id ? { ...s, ...formData } as Service : s));
-      toast.success('Service updated successfully');
-    } else {
-      const newService: Service = {
-        ...formData as Service,
-        id: Date.now().toString(),
-        created_at: new Date().toISOString(),
-      };
-      setServices([...services, newService]);
-      toast.success('Service created successfully');
-    }
-    setIsDialogOpen(false);
+  const handleSave = async () => {
+    if (!formData.title?.trim()) { toast.error('Title is required'); return; }
+    const saved = selectedService?.id
+      ? await persistServices(services.map(s => s.id === selectedService.id ? { ...s, ...formData } as Service : s), 'Service updated successfully')
+      : await persistServices([...services, { ...formData as Service, features: formData.features ?? [], id: crypto.randomUUID() }], 'Service created successfully');
+    if (saved) setIsDialogOpen(false);
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!selectedService?.id) return;
-    setServices(services.filter(s => s.id !== selectedService.id));
-    toast.success('Service deleted successfully');
-    setIsDeleteDialogOpen(false);
+    if (await persistServices(services.filter(s => s.id !== selectedService.id), 'Service deleted successfully')) setIsDeleteDialogOpen(false);
   };
 
   const openEditDialog = (service: Service) => {
@@ -117,30 +99,12 @@ const ServicesManager = () => {
       icon: 'Code',
       features: [],
     });
-    setFeatureInput('');
     setIsDialogOpen(true);
   };
 
   const openDeleteDialog = (service: Service) => {
     setSelectedService(service);
     setIsDeleteDialogOpen(true);
-  };
-
-  const addFeature = () => {
-    if (featureInput.trim()) {
-      setFormData({
-        ...formData,
-        features: [...(formData.features || []), featureInput.trim()],
-      });
-      setFeatureInput('');
-    }
-  };
-
-  const removeFeature = (index: number) => {
-    setFormData({
-      ...formData,
-      features: formData.features?.filter((_, i) => i !== index) || [],
-    });
   };
 
   const filteredServices = services.filter(
@@ -198,9 +162,7 @@ const ServicesManager = () => {
       </motion.div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {loading ? (
-          <div className="col-span-3 text-center py-12">Loading...</div>
-        ) : filteredServices.length === 0 ? (
+        {filteredServices.length === 0 ? (
           <div className="col-span-3 text-center py-12 text-muted-foreground">
             No services found. Add your first service to get started.
           </div>
@@ -277,69 +239,20 @@ const ServicesManager = () => {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-5 py-4">
-            <div className="space-y-2">
-              <Label className="text-muted-foreground">Service Title *</Label>
-              <Input
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                placeholder="e.g., Web Development"
-                className="glass-card border-0"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-muted-foreground">Description *</Label>
-              <Textarea
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Describe your service..."
-                rows={3}
-                className="glass-card border-0 resize-none"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-muted-foreground">Features</Label>
-              <div className="flex gap-2">
-                <Input
-                  value={featureInput}
-                  onChange={(e) => setFeatureInput(e.target.value)}
-                  placeholder="Add a feature..."
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      addFeature();
-                    }
-                  }}
-                  className="glass-card border-0"
-                />
-                <Button type="button" onClick={addFeature} variant="outline">
-                  <Plus className="w-4 h-4" />
-                </Button>
-              </div>
-              <div className="flex flex-wrap gap-2 mt-2">
-                {formData.features?.map((feature, idx) => (
-                  <Badge
-                    key={idx}
-                    variant="secondary"
-                    className="cursor-pointer hover:bg-red-100 glass-card"
-                    onClick={() => removeFeature(idx)}
-                  >
-                    {feature} ×
-                  </Badge>
-                ))}
-              </div>
-            </div>
+            <LocalizedField label="Service Title" required value={localizedValues(formData, 'title')} onChange={(language, value) => setLocalized('title', language, value)} placeholder="e.g., Web Development" />
+            <LocalizedField label="Description" required value={localizedValues(formData, 'description')} onChange={(language, value) => setLocalized('description', language, value)} multiline rows={3} placeholder="Describe your service..." />
+            <LocalizedField label="Features (one per line or comma-separated)" value={localizedValues(formData, 'features')} onChange={(language, value) => setLocalized('features', language, value)} multiline rows={4} placeholder="Responsive design&#10;Accessible layouts" />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
               Cancel
             </Button>
             <Button
-              onClick={handleSave}
+              onClick={() => void handleSave()}
+              disabled={saving}
               className="bg-gradient-primary hover:opacity-90 shadow-glow"
             >
-              {selectedService ? 'Save Changes' : 'Add Service'}
+              {saving ? 'Saving...' : selectedService ? 'Save Changes' : 'Add Service'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -362,7 +275,8 @@ const ServicesManager = () => {
           <AlertDialogFooter>
             <AlertDialogCancel className="border-0">Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleDelete}
+              onClick={(e) => { e.preventDefault(); void handleDelete(); }}
+              disabled={saving}
               className="bg-red-500 hover:bg-red-600 text-white"
             >
               Delete

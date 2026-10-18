@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+import tailwindcssAnimate from "tailwindcss-animate";
 
 export default {
   darkMode: ["class"],
@@ -204,9 +205,9 @@ export default {
         "shimmer": "shimmer 3s linear infinite",
       },
       backgroundImage: {
-        'gradient-primary': 'linear-gradient(135deg, hsl(190, 100%, 50%), hsl(270, 100%, 65%))',
-        'gradient-secondary': 'linear-gradient(135deg, hsl(310, 80%, 60%), hsl(190, 100%, 50%))',
-        'gradient-hero': 'linear-gradient(135deg, hsl(220, 30%, 10%) 0%, hsl(270, 50%, 20%) 50%, hsl(190, 50%, 15%) 100%)',
+        'gradient-primary': 'var(--gradient-primary)',
+        'gradient-secondary': 'var(--gradient-secondary)',
+        'gradient-hero': 'var(--gradient-hero)',
         'gradient-card': 'linear-gradient(135deg, hsl(220, 20%, 15%), hsl(270, 30%, 15%))',
         'gradient-radial': 'radial-gradient(circle, var(--tw-gradient-stops))',
       },
@@ -217,5 +218,5 @@ export default {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [tailwindcssAnimate],
 } satisfies Config;

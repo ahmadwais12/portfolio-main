@@ -1,0 +1,13 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+  VITE_SITE_URL = "https://ahmad-wais.netlify.app"
+
+# SPA fallback so /dashboard/* routes work on refresh/deep-link
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

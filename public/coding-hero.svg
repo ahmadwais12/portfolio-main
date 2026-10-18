@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" fill="none">
+  <defs>
+    <linearGradient id="panel" x1="620" y1="180" x2="1280" y2="680" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0b1224" stop-opacity=".84" />
+      <stop offset="1" stop-color="#111827" stop-opacity=".68" />
+    </linearGradient>
+    <linearGradient id="code" x1="0" y1="0" x2="1" y2="0">
+      <stop stop-color="#22d3ee" />
+      <stop offset=".55" stop-color="#a78bfa" />
+      <stop offset="1" stop-color="#34d399" />
+    </linearGradient>
+    <radialGradient id="glow">
+      <stop stop-color="#8b5cf6" stop-opacity=".3" />
+      <stop offset="1" stop-color="#8b5cf6" stop-opacity="0" />
+    </radialGradient>
+    <filter id="softGlow" x="-100%" y="-100%" width="300%" height="300%">
+      <feGaussianBlur stdDeviation="12" />
+    </filter>
+    <pattern id="pixelGrid" width="22" height="22" patternUnits="userSpaceOnUse">
+      <rect x="8" y="8" width="4" height="4" rx="1" fill="#94a3b8" fill-opacity=".3" />
+    </pattern>
+  </defs>
+
+  <ellipse cx="1030" cy="460" rx="570" ry="390" fill="url(#glow)" />
+
+  <!-- Floating pixel field -->
+  <path d="M0 110h410v310H0zM1190 70h410v300h-410zM1180 610h420v290h-420z" fill="url(#pixelGrid)" opacity=".62" />
+
+  <!-- Circuit traces behind the editor -->
+  <g stroke="url(#code)" stroke-opacity=".58" stroke-width="2">
+    <path d="M85 632h190l72-72h100m-90-310h110l48 48h82M1040 115v64l54 54h120l42 42h212M1320 560h-90l-55 55h-128l-54 54h-90" />
+    <path d="M145 714h160l58-58h90m882-488h98l44 44h76m-290 552h-104l-50-50h-140" stroke-dasharray="7 11" />
+  </g>
+  <g fill="#22d3ee">
+    <circle cx="85" cy="632" r="5" /><circle cx="447" cy="560" r="5" /><circle cx="505" cy="308" r="5" />
+    <circle cx="1454" cy="275" r="5" /><circle cx="903" cy="723" r="5" /><circle cx="305" cy="714" r="5" />
+  </g>
+
+  <!-- Translucent code editor window -->
+  <g transform="rotate(-4 1000 445)">
+    <rect x="590" y="190" width="770" height="510" rx="24" fill="#22d3ee" fill-opacity=".12" filter="url(#softGlow)" />
+    <rect x="610" y="170" width="760" height="510" rx="22" fill="url(#panel)" stroke="#a5b4fc" stroke-opacity=".3" stroke-width="2" />
+    <path d="M610 228h760" stroke="#94a3b8" stroke-opacity=".22" />
+    <circle cx="646" cy="200" r="6" fill="#fb7185" fill-opacity=".8" />
+    <circle cx="670" cy="200" r="6" fill="#fbbf24" fill-opacity=".8" />
+    <circle cx="694" cy="200" r="6" fill="#34d399" fill-opacity=".8" />
+    <text x="735" y="206" fill="#cbd5e1" fill-opacity=".66" font-family="monospace" font-size="15">src / components / Hero.tsx</text>
+
+    <!-- line numbers -->
+    <g fill="#64748b" fill-opacity=".7" font-family="monospace" font-size="15" text-anchor="end">
+      <text x="660" y="278">01</text><text x="660" y="322">02</text><text x="660" y="366">03</text>
+      <text x="660" y="410">04</text><text x="660" y="454">05</text><text x="660" y="498">06</text>
+      <text x="660" y="542">07</text><text x="660" y="586">08</text><text x="660" y="630">09</text>
+    </g>
+    <!-- syntax inspired strokes -->
+    <g stroke-linecap="round" stroke-width="9">
+      <path d="M692 273h76m18 0h102m-196 44h42m18 0h145m-205 44h108m18 0h86m-212 44h48m18 0h174m-240 44h94m18 0h64m-176 44h50m18 0h126m-194 44h138m18 0h84m-240 44h60m18 0h142m-220 44h102m18 0h70" stroke="url(#code)" stroke-opacity=".92" />
+      <path d="M1005 273h130m-78 44h165m-119 44h111m-77 44h143m-104 44h100m-157 44h142m-84 44h135m-120 44h95m-170 44h140" stroke="#c4b5fd" stroke-opacity=".72" />
+    </g>
+  </g>
+
+  <!-- Floating code glyphs -->
+  <g fill="url(#code)" font-family="monospace" font-weight="700" opacity=".82">
+    <text x="240" y="240" font-size="74">&lt;/&gt;</text>
+    <text x="1320" y="750" font-size="86">{ }</text>
+    <text x="90" y="820" font-size="42">01</text>
+  </g>
+</svg>

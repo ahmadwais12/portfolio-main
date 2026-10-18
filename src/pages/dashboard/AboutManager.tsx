@@ -2,27 +2,43 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import PageLoader from '@/components/PageLoader';
 import { AboutManagerSkeleton } from '@/components/Skeletons';
-import { User, Save, Mail, Phone, MapPin, Sparkles, Github, Linkedin, Twitter, MessageCircle, Globe } from 'lucide-react';
+import { User, Save, Sparkles } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { FileUploadField } from '@/components/FileUploadField';
 import { getAbout, saveAbout, type AboutData } from '@/lib/store';
 import { toast } from 'sonner';
+import { LocalizedField } from '@/components/dashboard/LocalizedField';
+import { localizedValues, type ContentLanguage } from '@/lib/localization';
 
 const AboutManager = () => {
   const [data, setData] = useState<AboutData>(getAbout());
   const [saving, setSaving] = useState(false);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setSaving(true);
-    saveAbout(data);
-    setTimeout(() => { toast.success('About info saved!'); setSaving(false); }, 600);
+    try {
+      await saveAbout(data);
+      toast.success('About info saved!');
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Unable to save about info');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const set = (field: keyof AboutData, value: string) => setData(prev => ({ ...prev, [field]: value }));
-  const setSocial = (field: string, value: string) => setData(prev => ({ ...prev, social_links: { ...prev.social_links, [field]: value } }));
+  const setUniversal = (field: 'email' | 'phone', value: string) => setData(prev => ({
+    ...prev,
+    [field]: value,
+    [`${field}_en`]: value,
+  }));
+  const setLocalized = (field: string, language: ContentLanguage, value: string) => {
+    set(`${field}_${language}` as keyof AboutData, value);
+    if (language === 'en') set(field as keyof AboutData, value);
+  };
 
   return (
     <PageLoader skeleton={<AboutManagerSkeleton />} delay={600}>
@@ -46,38 +62,21 @@ const AboutManager = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-muted-foreground">Full Name</Label>
-                  <Input value={data.full_name} onChange={e => set('full_name', e.target.value)} className="glass-card border-0" />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-muted-foreground">Title</Label>
-                  <Input value={data.title} onChange={e => set('title', e.target.value)} className="glass-card border-0" />
-                </div>
+              <LocalizedField label="Full Name" value={localizedValues(data, 'full_name')} onChange={(language, value) => setLocalized('full_name', language, value)} />
+              <LocalizedField label="Professional Titles" value={localizedValues(data, 'title')} onChange={(language, value) => setLocalized('title', language, value)} multiline rows={3} placeholder={'Full-Stack Developer\nFlutter Developer'} />
+              <p className="-mt-1 text-xs text-muted-foreground">Add several titles — one per line (commas work too). They rotate in the hero section.</p>
+              <LocalizedField label="Bio" value={localizedValues(data, 'bio')} onChange={(language, value) => setLocalized('bio', language, value)} multiline rows={5} placeholder="Write your bio here." />
+              <div className="space-y-2">
+                <Label className="text-muted-foreground">Email</Label>
+                <Input type="email" dir="ltr" value={data.email_en || data.email} onChange={e => setUniversal('email', e.target.value)} />
               </div>
               <div className="space-y-2">
-                <Label className="text-muted-foreground">Bio</Label>
-                <Textarea value={data.bio} onChange={e => set('bio', e.target.value)} rows={6} placeholder="Write your bio here. Add a blank line between paragraphs." className="glass-card border-0 resize-none" />
+                <Label className="text-muted-foreground">Phone</Label>
+                <Input type="tel" dir="ltr" value={data.phone_en || data.phone} onChange={e => setUniversal('phone', e.target.value)} />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-muted-foreground flex items-center gap-1"><Mail className="w-3 h-3" /> Email</Label>
-                  <Input value={data.email} onChange={e => set('email', e.target.value)} className="glass-card border-0" />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-muted-foreground flex items-center gap-1"><Phone className="w-3 h-3" /> Phone</Label>
-                  <Input value={data.phone} onChange={e => set('phone', e.target.value)} className="glass-card border-0" />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label className="text-muted-foreground flex items-center gap-1"><MapPin className="w-3 h-3" /> Location</Label>
-                <Input value={data.location} onChange={e => set('location', e.target.value)} className="glass-card border-0" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-muted-foreground">Resume URL</Label>
-                <Input value={data.resume_url} onChange={e => set('resume_url', e.target.value)} placeholder="https://..." className="glass-card border-0" />
-              </div>
+              <LocalizedField label="Location" value={localizedValues(data, 'location')} onChange={(language, value) => setLocalized('location', language, value)} />
+              <FileUploadField label="Resume (PDF)" value={data.resume_url} onChange={url => set('resume_url', url)} bucket="portfolio-assets" prefix="resume" kind="pdf" />
+              <FileUploadField label="Profile Image" value={data.avatar_url} onChange={url => set('avatar_url', url)} bucket="profile-images" prefix="avatar" deletePreviousOnReplace />
             </CardContent>
           </Card>
         </motion.div>
@@ -92,50 +91,23 @@ const AboutManager = () => {
                   Stats
                 </CardTitle>
               </CardHeader>
-              <CardContent className="grid grid-cols-3 gap-4">
+              <CardContent className="space-y-4">
                 {[
-                  { label: 'Years Experience', field: 'years_experience' as keyof AboutData },
-                  { label: 'Projects Completed', field: 'projects_completed' as keyof AboutData },
-                  { label: 'Technologies', field: 'technologies' as keyof AboutData },
+                  { label: 'Years Experience', field: 'years_experience' },
+                  { label: 'Projects Completed', field: 'projects_completed' },
+                  { label: 'Technologies', field: 'technologies' },
                 ].map(({ label, field }) => (
-                  <div key={field} className="space-y-2">
-                    <Label className="text-muted-foreground text-xs">{label}</Label>
-                    <Input value={data[field] as string} onChange={e => set(field, e.target.value)} className="glass-card border-0 text-center font-bold" />
-                  </div>
+                  <LocalizedField key={field} label={label} value={localizedValues(data, field)} onChange={(language, value) => setLocalized(field, language, value)} />
                 ))}
               </CardContent>
             </Card>
           </motion.div>
 
-          {/* Social Links */}
-          <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
-            <Card className="glass-card border-0">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <div className="p-1.5 rounded-lg bg-primary/10"><Globe className="w-4 h-4 text-primary" /></div>
-                  Social Links
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {[
-                  { icon: Github, label: 'GitHub', field: 'github' },
-                  { icon: Linkedin, label: 'LinkedIn', field: 'linkedin' },
-                  { icon: Twitter, label: 'Twitter', field: 'twitter' },
-                  { icon: MessageCircle, label: 'WhatsApp', field: 'whatsapp' },
-                ].map(({ icon: Icon, label, field }) => (
-                  <div key={field} className="space-y-2">
-                    <Label className="text-muted-foreground flex items-center gap-2"><Icon className="w-4 h-4" />{label}</Label>
-                    <Input value={data.social_links[field as keyof typeof data.social_links]} onChange={e => setSocial(field, e.target.value)} placeholder={`https://...`} className="glass-card border-0" />
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          </motion.div>
         </div>
       </div>
 
       <motion.div className="flex justify-end" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
-        <Button onClick={handleSave} disabled={saving} className="gap-2 bg-gradient-primary hover:opacity-90 shadow-glow">
+        <Button onClick={() => void handleSave()} disabled={saving} className="gap-2 bg-gradient-primary hover:opacity-90 shadow-glow">
           <Save className="w-4 h-4" />
           {saving ? 'Saving...' : 'Save Changes'}
         </Button>

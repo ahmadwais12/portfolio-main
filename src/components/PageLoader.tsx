@@ -1,4 +1,5 @@
 import { useState, useEffect, ReactNode } from "react";
+import { usePortfolio } from "@/lib/store";
 
 interface PageLoaderProps {
   skeleton: ReactNode;
@@ -7,14 +8,16 @@ interface PageLoaderProps {
 }
 
 const PageLoader = ({ skeleton, children, delay = 800 }: PageLoaderProps) => {
-  const [loading, setLoading] = useState(true);
+  const [waiting, setWaiting] = useState(true);
+  const { status } = usePortfolio();
 
   useEffect(() => {
-    const t = setTimeout(() => setLoading(false), delay);
+    const t = setTimeout(() => setWaiting(false), delay);
     return () => clearTimeout(t);
   }, [delay]);
 
-  return loading ? <>{skeleton}</> : <>{children}</>;
+  const contentPending = status === "idle" || status === "loading";
+  return waiting || contentPending ? <>{skeleton}</> : <>{children}</>;
 };
 
 export default PageLoader;
