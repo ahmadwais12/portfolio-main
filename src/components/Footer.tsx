@@ -6,16 +6,6 @@ import { usePortfolio } from "@/lib/store";
 import { getSocialIcon, rgba } from "@/lib/socials";
 import { useUiText } from "@/lib/localization";
 
-/* ─── floating particle ─── */
-const Particle = ({ x, y, delay, size }: { x: string; y: string; delay: number; size: number }) => (
-  <motion.div
-    className="absolute rounded-full bg-primary/30 pointer-events-none"
-    style={{ left: x, top: y, width: size, height: size }}
-    animate={{ y: [0, -18, 0], opacity: [0.2, 0.6, 0.2], scale: [1, 1.4, 1] }}
-    transition={{ duration: 3.5 + delay, repeat: Infinity, delay, ease: "easeInOut" }}
-  />
-);
-
 const navLinks = [
   { label: "About",        href: "/about" },
   { label: "Skills",       href: "/skills" },
@@ -45,23 +35,7 @@ const Footer = () => {
     }));
 
   return (
-    <footer className="relative bg-gradient-to-br from-background via-muted/40 to-background border-t border-border/50 overflow-hidden" ref={ref}>
-
-      {/* Ambient blobs */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <motion.div animate={{ scale:[1,1.1,1], opacity:[0.04,0.09,0.04] }} transition={{ duration:8, repeat:Infinity }}
-          className="absolute -top-32 -left-32 w-[450px] h-[450px] bg-cyan-500 rounded-full blur-[110px]" />
-        <motion.div animate={{ scale:[1,1.15,1], opacity:[0.04,0.08,0.04] }} transition={{ duration:10, repeat:Infinity, delay:2 }}
-          className="absolute -bottom-32 -right-32 w-[550px] h-[550px] bg-violet-500 rounded-full blur-[110px]" />
-        {/* Floating particles */}
-        <Particle x="10%" y="20%" delay={0}   size={4} />
-        <Particle x="25%" y="60%" delay={0.8} size={3} />
-        <Particle x="50%" y="15%" delay={1.5} size={5} />
-        <Particle x="70%" y="70%" delay={0.4} size={3} />
-        <Particle x="85%" y="30%" delay={1.2} size={4} />
-        <Particle x="40%" y="80%" delay={2.0} size={3} />
-      </div>
-
+    <footer className="relative overflow-hidden border-t border-border/60 bg-background/40" ref={ref}>
       <div className="container mx-auto px-4 pt-16 pb-0 relative z-10">
 
         {/* ── Top: Logo + tagline + nav ── */}
@@ -70,7 +44,7 @@ const Footer = () => {
           {/* Brand */}
           <motion.div initial={{ opacity:0, y:20 }} animate={isInView ? { opacity:1, y:0 } : {}} transition={{ duration:0.6 }}>
             <div className="flex items-center gap-3 mb-3">
-              <span className="text-xl font-black bg-gradient-to-r from-cyan-400 via-primary to-violet-500 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-[#bae6fd] via-[#38bdf8] to-[#0284c7] bg-clip-text text-xl font-black text-transparent">
                 {brandName}
               </span>
             </div>
@@ -79,7 +53,7 @@ const Footer = () => {
             </p>
             {about.location && (
               <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                <MapPin className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                <MapPin className="w-3.5 h-3.5 text-gold flex-shrink-0" />
                 {about.location}
               </p>
             )}
@@ -88,17 +62,17 @@ const Footer = () => {
           {/* Quick nav */}
           <motion.div initial={{ opacity:0, y:20 }} animate={isInView ? { opacity:1, y:0 } : {}} transition={{ duration:0.6, delay:0.1 }}>
             <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4 flex items-center gap-2">
-              <Sparkles className="w-3.5 h-3.5 text-primary" /> {t("footer.quickLinks", "Quick Links")}
+              <Sparkles className="w-3.5 h-3.5 text-gold" /> {t("footer.quickLinks", "Quick Links")}
             </p>
             <div className="grid grid-cols-2 gap-x-4 gap-y-2">
               {navLinks.map((link, i) => (
                 <MotionLink key={link.label} to={link.href}
                   initial={{ opacity:0, x:-10 }} animate={isInView ? { opacity:1, x:0 } : {}}
                   transition={{ delay:0.15+i*0.05 }}
-                  whileHover={{ x:4, color:"hsl(190,100%,50%)" }}
-                  className="text-sm text-muted-foreground hover:text-primary transition-colors duration-200 flex items-center gap-1 group"
+                  whileHover={{ x:4 }}
+                  className="group flex items-center gap-1 text-sm text-muted-foreground transition-colors duration-200 hover:text-gold"
                 >
-                  <span className="w-1 h-1 rounded-full bg-primary/40 group-hover:bg-primary transition-colors flex-shrink-0" />
+                  <span className="w-1 h-1 rounded-full bg-gold/40 group-hover:bg-gold transition-colors flex-shrink-0" />
                   {t(`nav.${link.label.toLowerCase()}`, link.label)}
                 </MotionLink>
               ))}
@@ -108,10 +82,10 @@ const Footer = () => {
           {/* Availability card */}
           <motion.div initial={{ opacity:0, y:20 }} animate={isInView ? { opacity:1, y:0 } : {}} transition={{ duration:0.6, delay:0.2 }}>
             <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4 flex items-center gap-2">
-              <Sparkles className="w-3.5 h-3.5 text-primary" /> {t("footer.status", "Status")}
+              <Sparkles className="w-3.5 h-3.5 text-gold" /> {t("footer.status", "Status")}
             </p>
             <div className="space-y-3">
-              <div className="flex items-center gap-3 p-3 glass-card rounded-xl border border-green-400/20 bg-green-500/5">
+              <div className="flex items-center gap-3 rounded-xl border border-green-400/20 bg-green-500/5 p-3">
                 <motion.div className="w-2.5 h-2.5 rounded-full bg-green-400 flex-shrink-0"
                   animate={{ scale:[1,1.4,1], opacity:[1,0.5,1] }} transition={{ duration:2, repeat:Infinity }} />
                 <div>
@@ -121,7 +95,7 @@ const Footer = () => {
               </div>
               <MotionLink to="/contact"
                 whileHover={{ scale:1.02, y:-2 }} whileTap={{ scale:0.97 }}
-                className="flex items-center justify-between p-3 rounded-xl bg-gradient-primary text-white shadow-glow transition-all duration-300 group"
+                className="flex items-center justify-between rounded-xl bg-gold p-3 text-gold-foreground transition-colors hover:bg-gold/90 group"
               >
                 <span className="text-xs font-semibold">{t("nav.hireMe", "Hire Me")}</span>
                 <ExternalLink className="w-3.5 h-3.5 opacity-80 group-hover:opacity-100 transition-opacity" />
@@ -132,12 +106,12 @@ const Footer = () => {
 
         {/* Divider */}
         <motion.div initial={{ scaleX:0 }} animate={isInView ? { scaleX:1 } : {}} transition={{ duration:0.9, delay:0.3 }}
-          className="h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent mb-10" />
+          className="mb-10 h-px bg-gradient-to-r from-transparent via-gold/30 to-transparent" />
 
         {/* ── Social links grid ── */}
         {socialLinks.length > 0 && <motion.div initial={{ opacity:0, y:16 }} animate={isInView ? { opacity:1, y:0 } : {}} transition={{ delay:0.35 }} className="mb-10">
           <p className="text-center text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-6 flex items-center justify-center gap-2">
-            <Sparkles className="w-3.5 h-3.5 text-primary" /> {t("footer.findMeOn", "Find Me On")} <Sparkles className="w-3.5 h-3.5 text-primary" />
+            <Sparkles className="w-3.5 h-3.5 text-gold" /> {t("footer.findMeOn", "Find Me On")} <Sparkles className="w-3.5 h-3.5 text-gold" />
           </p>
           <div className="mx-auto flex max-w-4xl flex-wrap justify-center gap-3 [&>a]:w-[calc(50%-0.375rem)] sm:[&>a]:w-32">
             {socialLinks.map((s, i) => (
@@ -148,7 +122,7 @@ const Footer = () => {
                 whileHover={{ y:-7, boxShadow:`0 22px 45px ${rgba(s.color, 0.35)}` }}
                 whileTap={{ scale:0.95 }}
                 style={{ borderColor: rgba(s.color, 0.25), background: rgba(s.color, 0.07) }}
-                className="relative group flex flex-col items-center gap-2 p-4 rounded-2xl border glass-card overflow-hidden transition-all duration-300"
+                className="relative group flex flex-col items-center gap-2 overflow-hidden rounded-2xl border p-4 transition-all duration-300"
               >
                 <div className="absolute top-0 left-0 right-0 h-[2px]"
                   style={{ background: `linear-gradient(to right, transparent, ${s.color}, transparent)` }} />
@@ -181,7 +155,7 @@ const Footer = () => {
             {/* Copyright */}
             <p className="text-sm text-muted-foreground">
               © {new Date().getFullYear()}{" "}
-              <span className="font-bold bg-gradient-to-r from-cyan-400 to-violet-500 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-[#bae6fd] via-[#38bdf8] to-[#0284c7] bg-clip-text font-bold text-transparent">
                 {brandName}
               </span>
               . {t("footer.rights", "All rights reserved.")}
@@ -194,7 +168,7 @@ const Footer = () => {
                 <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500" />
               </motion.span>
               {t("footer.andPassion", "and passion")}{about.location && <> {t("footer.in", "in")}
-              <span className="font-semibold bg-gradient-to-r from-cyan-400 to-primary bg-clip-text text-transparent">
+              <span className="font-semibold text-gold">
                 {about.location}
               </span></>}
             </p>
@@ -203,7 +177,7 @@ const Footer = () => {
           <button
             type="button"
             onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-            className="group inline-flex items-center gap-2 rounded-full border border-border/60 bg-background/60 px-4 py-2 text-xs font-semibold text-muted-foreground backdrop-blur-sm transition-all hover:border-primary/50 hover:text-primary"
+            className="group inline-flex items-center gap-2 rounded-full border border-border/60 bg-background/60 px-4 py-2 text-xs font-semibold text-muted-foreground backdrop-blur-sm transition-all hover:border-gold/50 hover:text-gold"
           >
             {t("footer.backToTop", "Back to top")}
             <ArrowUp className="h-3.5 w-3.5 transition-transform group-hover:-translate-y-0.5" />

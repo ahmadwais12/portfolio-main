@@ -82,15 +82,15 @@ const SiteIntro = () => {
       onAnimationComplete={() => { if (leaving) setGone(true); }}
     >
       <div className="hero-grid absolute inset-0" />
-      <div className="absolute -left-24 top-1/4 h-72 w-72 rounded-full bg-primary/25 blur-[110px]" />
-      <div className="absolute -right-20 bottom-1/4 h-72 w-72 rounded-full bg-secondary/25 blur-[110px]" />
+      <div className="absolute -left-24 top-1/4 h-72 w-72 rounded-full bg-gold/20 blur-[110px]" />
+      <div className="absolute -right-20 bottom-1/4 h-72 w-72 rounded-full bg-gold/10 blur-[110px]" />
 
       <div className="relative flex h-full flex-col items-center justify-center gap-6 px-6">
         <AnimatePresence mode="wait">
           {name && (
             <motion.span
               key={name}
-              className="text-gradient px-4 text-center text-3xl font-extrabold tracking-tight sm:text-4xl md:text-5xl"
+              className="text-gold-gradient px-4 text-center text-3xl font-extrabold tracking-tight sm:text-4xl md:text-5xl"
               initial={{ opacity: 0, y: 18 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
@@ -103,7 +103,7 @@ const SiteIntro = () => {
 
         <div className="relative h-px w-40 overflow-hidden bg-border sm:w-56">
           <motion.span
-            className="absolute inset-y-0 left-0 block w-1/3 bg-gradient-primary"
+            className="absolute inset-y-0 left-0 block w-1/3 bg-gold"
             animate={{ x: ["-100%", "300%"] }}
             transition={{ duration: 1.1, repeat: Infinity, ease: "easeInOut" }}
           />

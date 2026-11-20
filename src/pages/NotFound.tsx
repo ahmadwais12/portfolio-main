@@ -82,7 +82,7 @@ const NotFound = () => {
             className="text-muted-foreground text-lg mb-8 max-w-md mx-auto"
           >
             The page{" "}
-            <span className="text-primary font-mono text-sm bg-primary/10 px-2 py-0.5 rounded">
+            <span className="text-gold font-mono text-sm bg-gold/10 px-2 py-0.5 rounded">
               {location.pathname}
             </span>{" "}
             doesn't exist or has been moved.
@@ -95,12 +95,12 @@ const NotFound = () => {
             className="flex gap-3 justify-center flex-wrap"
           >
             <Link to="/">
-              <Button className="gap-2 bg-gradient-primary hover:opacity-90 shadow-glow">
+              <Button className="gap-2 bg-gold text-gold-foreground hover:bg-gold/90 shadow-glow">
                 <Home className="w-4 h-4" />
                 Go Home
               </Button>
             </Link>
-            <Button variant="outline" onClick={() => window.history.back()} className="gap-2 border-primary/30 hover:border-primary/60 hover:bg-primary/5">
+            <Button variant="outline" onClick={() => window.history.back()} className="gap-2 border-gold/30 text-gold hover:border-gold/60 hover:bg-gold/5">
               <ArrowLeft className="w-4 h-4" />
               Go Back
             </Button>

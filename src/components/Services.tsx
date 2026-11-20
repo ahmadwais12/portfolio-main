@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { Code, Palette, Smartphone, Database, Globe, Shield, Briefcase, Check, ArrowRight } from "lucide-react";
+import { Code, Palette, Smartphone, Database, Globe, Shield, Briefcase, ArrowRight } from "lucide-react";
 import { SectionHeader, EmptyState } from "@/components/SectionHeader";
 import { usePortfolio } from "@/lib/store";
 import { useUiText } from "@/lib/localization";
@@ -20,60 +20,41 @@ const Services = () => {
   const t = useUiText();
 
   return (
-    <section id="services" className="relative overflow-hidden bg-background px-4 py-24">
-      <div aria-hidden="true" className="pointer-events-none absolute -right-40 top-1/3 h-[28rem] w-[28rem] rounded-full bg-secondary/10 blur-[120px]" />
-
-      <div className="container relative mx-auto">
+    <section id="services" className="relative overflow-hidden py-20 sm:py-24">
+      <div className="container relative mx-auto px-4">
         <SectionHeader
-          eyebrow={t("services.eyebrow", "What I offer")}
+          eyebrow={t("services.eyebrow", "Services")}
           icon={Briefcase}
-          title={t("services.my", "My")}
-          highlight={t("services.title", "Services")}
-          description={t("services.description", "End-to-end help to design, build and launch products your users will love.")}
+          title={t("services.whatICan", "What I Can")}
+          highlight={t("services.buildForYou", "Build For You")}
+          description={t("services.servicesDescription", "Practical digital services shaped around clean interfaces, reliable systems, and business goals.")}
         />
 
         {services.length === 0 ? (
           <EmptyState icon={Briefcase} title={t("services.emptyTitle", "No services yet")} description={t("services.emptyDescription", "Services added from the dashboard will appear here.")} />
         ) : (
-          <div className="mx-auto grid max-w-6xl grid-cols-1 justify-center gap-6 sm:grid-cols-[repeat(auto-fit,minmax(18rem,22rem))]">
+          <div className="mx-auto grid max-w-6xl grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {services.map((service, i) => {
               const Icon = iconMap[service.icon] ?? Code;
               return (
                 <motion.article
                   key={service.id}
-                  initial={{ opacity: 0, y: 30 }}
+                  initial={{ opacity: 0, y: 24 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: "-60px" }}
-                  transition={{ duration: 0.55, delay: i * 0.08, ease: [0.22, 1, 0.36, 1] }}
-                  className="group relative flex flex-col overflow-hidden rounded-3xl border border-border/60 bg-card/60 p-7 backdrop-blur-sm transition-all duration-300 hover:-translate-y-2 hover:border-primary/40 hover:shadow-[0_25px_60px_-15px_hsl(var(--primary)/0.35)]"
+                  transition={{ duration: 0.5, delay: Math.min(i * 0.07, 0.3), ease: [0.22, 1, 0.36, 1] }}
+                  className="group relative overflow-hidden rounded-2xl border border-border/70 bg-card/60 p-6 backdrop-blur-sm transition-colors hover:border-gold/40"
                 >
-                  <div className="absolute inset-x-0 top-0 h-1 origin-left scale-x-0 bg-gradient-primary transition-transform duration-500 group-hover:scale-x-100" />
-                  <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-gradient-primary opacity-0 blur-3xl transition-opacity duration-500 group-hover:opacity-25" />
+                  <span aria-hidden="true" className="pointer-events-none absolute right-5 top-4 text-5xl font-extrabold leading-none text-foreground/[0.06]">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
 
-                  <div className="mb-6 flex items-start justify-between">
-                    <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-primary text-white shadow-glow transition-transform duration-300 group-hover:rotate-6 group-hover:scale-110">
-                      <Icon className="h-7 w-7" />
-                    </span>
-                    <span className="text-4xl font-extrabold text-foreground/5 transition-colors group-hover:text-primary/15">
-                      {String(i + 1).padStart(2, "0")}
-                    </span>
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-zinc-900 text-zinc-100 ring-1 ring-white/10">
+                    <Icon className="h-6 w-6" />
                   </div>
 
-                  <h3 className="mb-3 text-xl font-bold transition-colors group-hover:text-primary">{service.title}</h3>
-                  <p className="mb-5 text-sm leading-relaxed text-muted-foreground">{service.description}</p>
-
-                  {service.features?.length > 0 && (
-                    <ul className="mt-auto space-y-2 border-t border-border/60 pt-5">
-                      {service.features.map(f => (
-                        <li key={f} className="flex items-start gap-2 text-sm text-foreground/80">
-                          <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
-                            <Check className="h-3 w-3" />
-                          </span>
-                          {f}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+                  <h3 className="mt-7 text-xl font-bold tracking-tight text-gold">{service.title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{service.description}</p>
                 </motion.article>
               );
             })}
@@ -84,22 +65,22 @@ const Services = () => {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="relative mx-auto mt-14 flex max-w-6xl flex-col items-center justify-between gap-5 overflow-hidden rounded-3xl bg-gradient-primary p-8 text-center text-white shadow-glow-lg md:flex-row md:text-left"
+          transition={{ duration: 0.55 }}
+          className="mx-auto mt-12 flex max-w-6xl flex-col items-start justify-between gap-5 rounded-2xl border border-border/70 bg-card/60 p-7 backdrop-blur-sm md:flex-row md:items-center"
         >
-          <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.25),transparent_55%)]" />
-          <div className="relative">
-            <h3 className="text-2xl font-bold">{t("services.ctaTitle", "Have a project in mind?")}</h3>
-            <p className="text-white/80">{t("services.ctaDescription", "Let's talk about how I can help bring it to life.")}</p>
+          <div>
+            <h3 className="text-2xl font-bold tracking-tight text-gold">{t("services.ctaTitle", "Have a project in mind?")}</h3>
+            <p className="mt-1 text-muted-foreground">{t("services.ctaDescription", "Let's talk about how I can help bring it to life.")}</p>
           </div>
           <Link
             to="/contact"
-            className="group relative inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 font-semibold text-slate-900 transition-transform hover:scale-105"
+            className="group inline-flex h-11 shrink-0 items-center gap-2 rounded-full bg-gold px-6 text-sm font-semibold text-gold-foreground transition-colors hover:bg-gold/90"
           >
             {t("services.ctaStartProject", "Start a project")}
-            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
           </Link>
         </motion.div>
+
         {services.length > 0 && <SectionViewAll to="/services" />}
       </div>
     </section>

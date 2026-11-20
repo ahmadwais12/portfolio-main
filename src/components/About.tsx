@@ -6,7 +6,6 @@ import { SectionHeader } from "@/components/SectionHeader";
 import { usePortfolio } from "@/lib/store";
 import { initialsOf } from "@/lib/utils";
 import { useUiText, splitLocalizedList } from "@/lib/localization";
-import SectionViewAll from "@/components/SectionViewAll";
 
 const About = ({ preview = false }: { preview?: boolean }) => {
   const { about: data } = usePortfolio();
@@ -28,9 +27,7 @@ const About = ({ preview = false }: { preview?: boolean }) => {
   ].filter(c => c.value.trim());
 
   return (
-    <section id="about" className="relative overflow-hidden bg-background py-24">
-      <div aria-hidden="true" className="pointer-events-none absolute -left-40 top-20 h-[28rem] w-[28rem] rounded-full bg-primary/10 blur-[120px]" />
-
+    <section id="about" className="relative overflow-hidden py-20 sm:py-24">
       <div className="container relative mx-auto px-4">
         <SectionHeader
           eyebrow={t("about.eyebrow", "Get to know me")}
@@ -46,12 +43,66 @@ const About = ({ preview = false }: { preview?: boolean }) => {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-80px" }}
             transition={{ duration: 0.6 }}
-            className="mx-auto max-w-3xl text-center"
+            className="mx-auto grid max-w-6xl items-center gap-10 md:grid-cols-[280px_1fr]"
           >
-            <p className="text-lg leading-relaxed text-muted-foreground">
-              {paragraphs[0] || t("about.bioFallback", "Add your bio from the dashboard to introduce yourself here.")}
-            </p>
-            <SectionViewAll to="/about" />
+            <div className="relative mx-auto w-full max-w-[280px]">
+              <div className="aspect-[4/5] overflow-hidden rounded-2xl border border-border/70 bg-card">
+                {data.avatar_url ? (
+                  <img
+                    src={data.avatar_url}
+                    alt={data.full_name || t("about.profilePhoto", "Profile photo")}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-gold/20 via-background to-gold/10">
+                    {initials
+                      ? <span className="bg-gradient-to-br from-[#bae6fd] via-[#38bdf8] to-[#0284c7] bg-clip-text text-8xl font-extrabold text-transparent">{initials}</span>
+                      : <UserRound className="h-24 w-24 text-gold/50" />}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <p className="text-lg leading-relaxed text-muted-foreground">
+                {paragraphs[0] || t("about.bioFallback", "Add your bio from the dashboard to introduce yourself here.")}
+              </p>
+
+              {titles.length > 0 && (
+                <ul className="mt-6 flex flex-wrap gap-2">
+                  {titles.map(title => (
+                    <li
+                      key={title}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-card/60 px-3 py-1.5 text-xs font-medium text-foreground/80"
+                    >
+                      <CheckCircle2 className="h-3.5 w-3.5 text-gold" />
+                      {title}
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              <div className="mt-8 flex flex-wrap gap-3">
+                <Link
+                  to="/about"
+                  className="group inline-flex h-11 items-center gap-2 rounded-full bg-gold px-6 text-sm font-semibold text-gold-foreground transition-colors hover:bg-gold/90"
+                >
+                  {t("about.readMore", "More about me")}
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                </Link>
+                {data.resume_url && (
+                  <a
+                    href={data.resume_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex h-11 items-center gap-2 rounded-full border border-border/70 bg-card/60 px-6 text-sm font-semibold text-foreground/80 backdrop-blur-sm transition-colors hover:border-gold/50 hover:text-gold"
+                  >
+                    <Download className="h-4 w-4" />
+                    {t("about.downloadCv", "Download CV")}
+                  </a>
+                )}
+              </div>
+            </div>
           </motion.div>
         ) : (
         <div className="mx-auto grid max-w-6xl items-center gap-14 lg:grid-cols-[0.9fr_1.1fr]">
@@ -63,8 +114,8 @@ const About = ({ preview = false }: { preview?: boolean }) => {
             transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
             className="relative mx-auto w-full max-w-sm"
           >
-            <div className="absolute -inset-4 rounded-[2rem] bg-gradient-primary opacity-20 blur-2xl" />
-            <div className="absolute -right-4 -top-4 h-full w-full rounded-[2rem] border-2 border-primary/30" />
+            <div className="absolute -inset-4 rounded-[2rem] bg-gold opacity-20 blur-2xl" />
+            <div className="absolute -right-4 -top-4 h-full w-full rounded-[2rem] border-2 border-gold/30" />
             <div className="group relative aspect-[4/5] overflow-hidden rounded-[2rem] border border-border/60 bg-card shadow-elevated">
               {data.avatar_url ? (
                 <img
@@ -73,10 +124,10 @@ const About = ({ preview = false }: { preview?: boolean }) => {
                   className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                 />
               ) : (
-                <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/20 via-background to-secondary/20">
+                <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-gold/20 via-background to-gold/10">
                   {initials
-                    ? <span className="bg-gradient-primary bg-clip-text text-8xl font-extrabold text-transparent">{initials}</span>
-                    : <UserRound className="h-24 w-24 text-primary/50" />}
+                    ? <span className="bg-gradient-to-br from-[#bae6fd] via-[#38bdf8] to-[#0284c7] bg-clip-text text-8xl font-extrabold text-transparent">{initials}</span>
+                    : <UserRound className="h-24 w-24 text-gold/50" />}
                 </div>
               )}
               <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-background/80 to-transparent" />
@@ -90,7 +141,7 @@ const About = ({ preview = false }: { preview?: boolean }) => {
                 transition={{ delay: 0.4, type: "spring", bounce: 0.4 }}
                 className="absolute -bottom-6 -left-4 rounded-2xl border border-border/60 bg-background/90 px-5 py-4 shadow-xl backdrop-blur-md sm:-left-8"
               >
-                <p className="bg-gradient-primary bg-clip-text text-3xl font-extrabold text-transparent">{data.years_experience}</p>
+                <p className="text-gold-gradient text-3xl font-extrabold">{data.years_experience}</p>
                 <p className="text-xs font-medium text-muted-foreground">Years of experience</p>
               </motion.div>
             )}
@@ -105,8 +156,8 @@ const About = ({ preview = false }: { preview?: boolean }) => {
             className="space-y-8"
           >
             <div>
-              <h3 className="mb-4 text-2xl font-bold sm:text-3xl">
-                {data.full_name ? <>{t("about.im", "I'm {name}").split("{name}")[0]}<span className="text-gradient">{data.full_name}</span></> : t("about.whoIAm", "Who I am")}
+              <h3 className="mb-4 text-2xl font-bold text-gold-gradient sm:text-3xl">
+                {data.full_name ? <>{t("about.im", "I'm {name}").split("{name}")[0]}<span>{data.full_name}</span></> : t("about.whoIAm", "Who I am")}
               </h3>
               {paragraphs.length ? (
                 paragraphs.map((para, i) => (
@@ -121,7 +172,7 @@ const About = ({ preview = false }: { preview?: boolean }) => {
               <ul className="grid gap-2 sm:grid-cols-2">
                 {titles.map(t => (
                   <li key={t} className="flex items-center gap-2 text-sm font-medium">
-                    <CheckCircle2 className="h-4 w-4 shrink-0 text-primary" />
+                    <CheckCircle2 className="h-4 w-4 shrink-0 text-gold" />
                     {t}
                   </li>
                 ))}
@@ -133,7 +184,7 @@ const About = ({ preview = false }: { preview?: boolean }) => {
                 {contacts.map(c => {
                   const content = (
                     <>
-                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-gradient-primary group-hover:text-white">
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gold/10 text-gold transition-colors group-hover:bg-gold group-hover:text-gold-foreground">
                         <c.icon className="h-4 w-4" />
                       </span>
                       <span className="min-w-0">
@@ -142,7 +193,7 @@ const About = ({ preview = false }: { preview?: boolean }) => {
                       </span>
                     </>
                   );
-                  const cls = "group flex items-center gap-3 rounded-2xl border border-border/60 bg-card/60 p-3 backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:border-primary/40";
+                  const cls = "group flex items-center gap-3 rounded-2xl border border-border/60 bg-card/60 p-3 backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:border-gold/40";
                   return c.href
                     ? <a key={c.label} href={c.href} className={cls}>{content}</a>
                     : <div key={c.label} className={cls}>{content}</div>;
@@ -159,10 +210,10 @@ const About = ({ preview = false }: { preview?: boolean }) => {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ duration: 0.5, delay: 0.2 + index * 0.1 }}
-                    className="group relative overflow-hidden rounded-2xl border border-border/60 bg-card/60 p-4 text-center backdrop-blur-sm transition-all hover:-translate-y-1 hover:border-primary/40 hover:shadow-glow"
+                    className="group relative overflow-hidden rounded-2xl border border-border/60 bg-card/60 p-4 text-center backdrop-blur-sm transition-all hover:-translate-y-1 hover:border-gold/40 hover:shadow-glow"
                   >
-                    <stat.icon className="mx-auto mb-2 h-6 w-6 text-primary transition-transform group-hover:scale-110" />
-                    <p className="text-2xl font-extrabold text-gradient sm:text-3xl">{stat.value}</p>
+                    <stat.icon className="mx-auto mb-2 h-6 w-6 text-gold transition-transform group-hover:scale-110" />
+                    <p className="text-2xl font-extrabold text-gold-gradient sm:text-3xl">{stat.value}</p>
                     <p className="text-[11px] font-medium text-muted-foreground sm:text-xs">{stat.label}</p>
                   </motion.div>
                 ))}
@@ -170,13 +221,13 @@ const About = ({ preview = false }: { preview?: boolean }) => {
             )}
 
             <div className="flex flex-wrap gap-3">
-              <Button asChild size="lg" className="h-12 rounded-full bg-gradient-primary px-7 font-semibold text-white shadow-glow hover:opacity-95">
+              <Button asChild size="lg" className="h-12 rounded-full bg-gold px-7 font-semibold text-gold-foreground shadow-glow hover:bg-gold/90">
                 <Link to="/contact">
                   {t("about.workTogether", "Let's work together")} <ArrowRight className="ml-1 h-4 w-4" />
                 </Link>
               </Button>
               {data.resume_url && (
-                <Button asChild size="lg" variant="outline" className="h-12 rounded-full border-primary/40 px-7 font-semibold hover:bg-primary/10">
+                <Button asChild size="lg" variant="outline" className="h-12 rounded-full border-gold/40 px-7 font-semibold text-gold hover:bg-gold/10">
                   <a href={data.resume_url} target="_blank" rel="noopener noreferrer">
                     <Download className="mr-1 h-4 w-4" /> {t("about.downloadCv", "Download CV")}
                   </a>

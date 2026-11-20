@@ -1,207 +1,124 @@
-import { motion, useInView } from "motion/react";
-import { useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Download, Briefcase, GraduationCap, Award, Sparkles, FileText, Calendar, Building2 } from "lucide-react";
+import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
+import { ArrowRight, Calendar, Download, FileText } from "lucide-react";
 import { usePortfolio } from "@/lib/store";
 import { EmptyState, SectionHeader } from "@/components/SectionHeader";
 import { trackAnalyticsEvent } from "@/analytics/tracker";
 import { useUiText } from "@/lib/localization";
+import { initialsOf } from "@/lib/utils";
 import SectionViewAll from "@/components/SectionViewAll";
 
-const iconMap = { work: Briefcase, education: GraduationCap, certification: Award };
-
-const typeConfig = {
-  work:          { gradient: "from-cyan-500 to-blue-500",   bg: "bg-cyan-500/8",   border: "border-cyan-400/25",   text: "text-cyan-400",   glow: "rgba(6,182,212,0.2)",   label: "Work" },
-  education:     { gradient: "from-violet-500 to-purple-500", bg: "bg-violet-500/8", border: "border-violet-400/25", text: "text-violet-400", glow: "rgba(139,92,246,0.2)", label: "Education" },
-  certification: { gradient: "from-amber-400 to-orange-500", bg: "bg-amber-500/8",  border: "border-amber-400/25",  text: "text-amber-400",  glow: "rgba(245,158,11,0.2)",  label: "Certification" },
+const yearOf = (period: string, index: 0 | -1 = 0) => {
+  const years = (period.match(/\b(?:19|20)\d{2}\b/g) || []).map(Number);
+  if (years.length === 0) return null;
+  return index === 0 ? years[0] : years[years.length - 1];
 };
 
 const Resume = () => {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: "-80px" });
-  const { resume: timeline, about } = usePortfolio();
+  const { resume, about } = usePortfolio();
   const t = useUiText();
-  const [activeTab, setActiveTab] = useState("all");
+  const currentYear = new Date().getFullYear();
 
-  const filtered = activeTab === "all" ? timeline : timeline.filter(i => i.type === activeTab);
-
-  const counts = {
-    work:          timeline.filter(i => i.type === "work").length,
-    education:     timeline.filter(i => i.type === "education").length,
-    certification: timeline.filter(i => i.type === "certification").length,
-  };
+  const downloadButton = about.resume_url ? (
+    <a
+      href={about.resume_url}
+      onClick={() => void trackAnalyticsEvent("resume_download_click")}
+      download={`${(about.full_name || "Resume").replace(/ /g, "_")}_Resume.pdf`}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex h-11 items-center gap-2 rounded-full border border-border/70 bg-card/60 px-5 text-sm font-semibold text-foreground/80 backdrop-blur-sm transition-colors hover:border-gold/50 hover:text-gold"
+    >
+      <Download className="h-4 w-4" />
+      {t("resume.download", "Download Resume")}
+    </a>
+  ) : undefined;
 
   return (
-    <section id="resume" className="py-24 bg-background relative overflow-hidden" ref={ref}>
-
-      {/* Ambient blobs */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <motion.div animate={{ scale: [1,1.1,1], opacity:[0.03,0.07,0.03] }} transition={{ duration:9, repeat:Infinity }}
-          className="absolute -top-40 -left-40 w-[600px] h-[600px] bg-violet-500 rounded-full blur-[120px]" />
-        <motion.div animate={{ scale: [1,1.15,1], opacity:[0.03,0.06,0.03] }} transition={{ duration:11, repeat:Infinity, delay:3 }}
-          className="absolute -bottom-40 -right-40 w-[700px] h-[700px] bg-cyan-500 rounded-full blur-[120px]" />
-      </div>
-
-      <div className="container mx-auto px-4 relative z-10">
-
+    <section id="resume" className="relative overflow-hidden py-20 sm:py-24">
+      <div className="container relative mx-auto px-4">
         <SectionHeader
-          eyebrow={t("resume.eyebrow", "My journey")}
+          eyebrow={t("resume.experience", "Experience")}
           icon={FileText}
-          title={t("resume.titlePrefix", "Resume &")}
-          highlight={t("resume.highlight", "Experience")}
-          description={t("resume.description", "My professional journey, education and certifications.")}
-        >
-          {about.resume_url && (
-            <div className="mt-8">
-              <a
-                href={about.resume_url}
-                onClick={() => void trackAnalyticsEvent("resume_download_click")}
-                download={`${(about.full_name || "Resume").replace(/ /g, "_")}_Resume.pdf`}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Button className="h-12 gap-2 rounded-full bg-gradient-primary px-8 font-semibold text-white shadow-glow hover:opacity-95">
-                  <motion.span animate={{ y:[0,-2,0] }} transition={{ duration:1.5, repeat:Infinity }}>
-                    <Download className="w-5 h-5" />
-                  </motion.span>
-                  {t("resume.download", "Download Resume")}
-                </Button>
-              </a>
-            </div>
-          )}
-        </SectionHeader>
+          title={t("resume.company", "Company")}
+          highlight={t("resume.journey", "Journey")}
+          description={t("resume.journeyDescription", "A journey of professional growth, meaningful experiences, and contributions to every organization.")}
+          action={downloadButton}
+        />
 
-        {timeline.length === 0 ? (
+        {resume.length === 0 ? (
           <EmptyState icon={FileText} title={t("resume.emptyTitle", "No resume entries yet")} description={t("resume.emptyDescription", "Work, education and certifications added from the dashboard will appear here.")} />
         ) : (
-        <>
-        {/* Stats strip */}
-        <motion.div initial={{ opacity:0, y:20 }} animate={isInView ? { opacity:1, y:0 } : {}} transition={{ delay:0.2 }}
-          className="mx-auto mb-12 grid max-w-4xl grid-cols-2 gap-3 sm:grid-cols-4">
-          {[
-            { label:t("resume.work", "Work"),           value: counts.work,          icon: Briefcase,     gradient: typeConfig.work.gradient },
-            { label:t("resume.education", "Education"),      value: counts.education,     icon: GraduationCap, gradient: typeConfig.education.gradient },
-            { label:t("resume.certifications", "Certifications"), value: counts.certification, icon: Award,         gradient: typeConfig.certification.gradient },
-            { label:t("resume.totalEntries", "Total entries"),  value: timeline.length,      icon: Sparkles,      gradient: "from-primary to-secondary" },
-          ].map((s,i) => (
-            <motion.div key={s.label} initial={{ opacity:0, scale:0.9 }} animate={isInView ? { opacity:1, scale:1 } : {}}
-              transition={{ delay:0.2+i*0.08 }}
-              className="flex items-center gap-3 rounded-2xl border border-border/60 bg-card/60 px-4 py-3 backdrop-blur-sm transition-all hover:-translate-y-1 hover:border-primary/40">
-              <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${s.gradient} text-white shadow-md`}>
-                <s.icon className="h-5 w-5" />
-              </span>
-              <div>
-                <p className={`text-xl font-extrabold leading-none bg-gradient-to-r ${s.gradient} bg-clip-text text-transparent`}>{s.value}</p>
-                <p className="mt-1 text-xs text-muted-foreground">{s.label}</p>
-              </div>
-            </motion.div>
-          ))}
-        </motion.div>
+          <>
+            <div className="mx-auto max-w-5xl">
+              {resume.map((item, index) => {
+                const startYear = yearOf(item.period);
+                const endYear = yearOf(item.period, -1);
+                const ongoing = /present|current|now|ongoing/i.test(item.period);
+                const isPast = !ongoing && endYear !== null && endYear < currentYear;
+                const status = isPast ? t("resume.past", "Past") : t("resume.present", "Present");
 
-        {/* Filter tabs */}
-        <motion.div initial={{ opacity:0, y:16 }} animate={isInView ? { opacity:1, y:0 } : {}} transition={{ delay:0.35 }}
-          className="flex justify-center mb-12">
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="h-auto flex-wrap justify-center gap-1 rounded-3xl sm:rounded-full border border-border/60 bg-background/60 p-1 backdrop-blur-md">
-              {[
-                { value:"all",           label:t("resume.all", "All"),           count: timeline.length },
-                { value:"work",          label:t("resume.work", "Work"),          count: counts.work },
-                { value:"education",     label:t("resume.education", "Education"),     count: counts.education },
-                { value:"certification", label:t("resume.certifications", "Certifications"),count: counts.certification },
-              ].map(t => (
-                <TabsTrigger key={t.value} value={t.value}
-                  className="gap-1.5 rounded-full px-4 py-2 text-sm transition-all duration-300 data-[state=active]:bg-gradient-primary data-[state=active]:text-white data-[state=active]:shadow-glow">
-                  {t.label}
-                  <span className="rounded-full bg-foreground/10 px-1.5 text-[10px] font-bold">{t.count}</span>
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
-        </motion.div>
-
-        {/* Timeline */}
-        <div className="max-w-4xl mx-auto">
-          <div className="relative">
-            {/* Vertical line */}
-            <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-gradient-to-b from-cyan-500 via-violet-500 to-amber-500 opacity-40" />
-
-            <div className="space-y-8">
-              {filtered.map((item, index) => {
-                const Icon = iconMap[item.type];
-                const cfg  = typeConfig[item.type];
                 return (
-                  <motion.div
+                  <motion.article
                     key={item.id}
-                    initial={{ opacity:0, x:-40, scale:0.97 }}
-                    animate={isInView ? { opacity:1, x:0, scale:1 } : {}}
-                    transition={{ duration:0.55, delay:index*0.1, type:"spring", bounce:0.25 }}
-                    className="relative pl-20 group"
+                    initial={{ opacity: 0, y: 22 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: "-60px" }}
+                    transition={{ duration: 0.5, delay: Math.min(index * 0.08, 0.3), ease: [0.22, 1, 0.36, 1] }}
+                    className="relative grid gap-4 pb-10 md:grid-cols-[170px_40px_1fr] md:gap-0"
                   >
-                    {/* Timeline dot */}
-                    <motion.div
-                      whileHover={{ scale:1.2, rotate:10 }}
-                      transition={{ type:"spring", bounce:0.5 }}
-                      className={`absolute left-4 -translate-x-1/2 w-10 h-10 rounded-xl bg-gradient-to-br ${cfg.gradient} flex items-center justify-center shadow-lg text-white z-10`}
-                      style={{ boxShadow:`0 0 20px ${cfg.glow}` }}
-                    >
-                      <Icon className="w-5 h-5" />
-                    </motion.div>
+                    <div className="md:pr-6 md:text-right">
+                      <p className="text-3xl font-extrabold leading-none text-gold sm:text-4xl">
+                        {startYear ?? t("resume.experience", "Experience")}
+                      </p>
+                      <p className="mt-2 text-xs text-muted-foreground">{item.period}</p>
+                    </div>
 
-                    {/* Connector dot on line */}
-                    <div className={`absolute left-8 top-5 w-2 h-2 rounded-full bg-gradient-to-r ${cfg.gradient} -translate-x-1/2 z-10`} />
+                    <div className="relative hidden md:block" aria-hidden="true">
+                      <span className={`absolute left-1/2 top-2 w-px -translate-x-1/2 bg-border ${index === resume.length - 1 ? "h-16" : "h-full"}`} />
+                      <span className="absolute left-1/2 top-2 h-2.5 w-2.5 -translate-x-1/2 rounded-full bg-gold shadow-[0_0_14px_hsl(var(--gold)/0.75)]" />
+                    </div>
 
-                    {/* Card */}
-                    <motion.div
-                      whileHover={{ y:-4, boxShadow:`0 20px 50px ${cfg.glow}` }}
-                      transition={{ duration:0.25 }}
-                      className={`relative rounded-2xl p-6 border ${cfg.border} ${cfg.bg} glass-card overflow-hidden transition-all duration-300`}
-                    >
-                      {/* Top gradient bar */}
-                      <div className={`absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r ${cfg.gradient}`} />
-
-                      {/* Glow orb */}
-                      <div className={`absolute -top-6 -right-6 w-24 h-24 rounded-full bg-gradient-to-br ${cfg.gradient} opacity-0 group-hover:opacity-15 blur-2xl transition-opacity duration-500`} />
-
-                      {/* Header row */}
-                      <div className="flex items-start justify-between gap-3 mb-3 flex-wrap">
-                        <div className="flex-1 min-w-0">
-                          <h3 className={`text-xl font-bold group-hover:${cfg.text} transition-colors duration-300`}>
-                            {item.title}
-                          </h3>
-                          <div className="flex items-center gap-2 mt-1 flex-wrap">
-                            <span className={`flex items-center gap-1 text-sm font-semibold bg-gradient-to-r ${cfg.gradient} bg-clip-text text-transparent`}>
-                              <Building2 className={`w-3.5 h-3.5 ${cfg.text}`} />
-                              {item.organization}
-                            </span>
+                    <div className="group relative rounded-2xl border border-border/70 bg-card/60 p-5 backdrop-blur-sm transition-colors hover:border-gold/30 sm:p-6">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div className="flex min-w-0 items-center gap-3">
+                          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-gold/20 bg-gold/10 text-sm font-bold text-gold">
+                            {initialsOf(item.organization || item.title) || "•"}
+                          </div>
+                          <div className="min-w-0">
+                            <h3 className="truncate text-lg font-bold tracking-tight text-gold sm:text-xl">
+                              {item.organization || item.title}
+                            </h3>
+                            <p className="truncate text-sm text-muted-foreground">
+                              {item.organization ? item.title : item.type_label || t(`resume.${item.type}`, item.type)}
+                            </p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                          <Badge className={`${cfg.bg} ${cfg.text} border ${cfg.border} gap-1 text-xs font-semibold`}>
-                            <Calendar className="w-3 h-3" />
-                            {item.period}
-                          </Badge>
-                          <Badge className={`bg-gradient-to-r ${cfg.gradient} text-white border-0 text-xs capitalize`}>
-                            {item.type_label && item.type_label !== item.type ? item.type_label : t(`resume.${item.type}`, cfg.label)}
-                          </Badge>
-                        </div>
+                        <span className="rounded-full bg-foreground px-3 py-1 text-[11px] font-semibold text-background">
+                          {status}
+                        </span>
                       </div>
 
-                      {/* Divider */}
-                      <div className={`h-px bg-gradient-to-r ${cfg.gradient} opacity-20 mb-3`} />
+                      {item.description && (
+                        <p className="mt-4 text-sm leading-7 text-muted-foreground">{item.description}</p>
+                      )}
 
-                      {/* Description */}
-                      <p className="text-muted-foreground text-sm leading-relaxed">{item.description}</p>
-                    </motion.div>
-                  </motion.div>
+                      <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-border/60 pt-4">
+                        <span className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Calendar className="h-4 w-4 text-gold/80" />
+                          {item.period}
+                        </span>
+                        <Link to="/resume" className="group/link inline-flex items-center gap-1.5 text-sm font-semibold text-gold">
+                          {t("resume.viewDetails", "View details")}
+                          <ArrowRight className="h-4 w-4 transition-transform group-hover/link:translate-x-0.5" />
+                        </Link>
+                      </div>
+                    </div>
+                  </motion.article>
                 );
               })}
             </div>
-          </div>
-        </div>
-        <SectionViewAll to="/resume" />
-        </>
+            <SectionViewAll to="/resume" />
+          </>
         )}
       </div>
     </section>

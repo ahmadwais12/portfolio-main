@@ -24,7 +24,7 @@ const navItems: NavItem[] = [
 ];
 
 const iconButton =
-  "relative flex h-10 w-10 items-center justify-center rounded-full border border-border/60 bg-background/40 text-foreground/80 transition-colors hover:border-primary/60 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60";
+  "relative flex h-10 w-10 items-center justify-center rounded-full border border-border/60 bg-background/40 text-foreground/80 transition-colors hover:border-gold/60 hover:text-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/60";
 
 const Navbar = () => {
   const { about } = usePortfolio();
@@ -56,12 +56,16 @@ const Navbar = () => {
 
   const isActivePath = (path: string) => location.pathname === path;
   const brandName = about.full_name.trim() || "Portfolio";
+  const overHero = location.pathname === "/" && !scrolled;
+  const iconButtonClass = overHero
+    ? "relative flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white/80 transition-colors hover:border-[#38bdf8]/60 hover:text-[#38bdf8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#38bdf8]/60"
+    : iconButton;
 
   const themeToggle = (
     <button
       type="button"
       onClick={() => setTheme(isDark ? "light" : "dark")}
-      className={iconButton}
+      className={iconButtonClass}
       aria-label={isDark ? t("nav.switchToLightTheme", "Switch to light theme") : t("nav.switchToDarkTheme", "Switch to dark theme")}
     >
       <AnimatePresence mode="wait" initial={false}>
@@ -79,26 +83,26 @@ const Navbar = () => {
   );
 
   return (
-    <nav className="fixed inset-x-0 top-0 z-50 px-3 pt-3 sm:px-4" aria-label={t("nav.mainNavigation", "Main navigation")}>
+    <nav className="fixed inset-x-0 top-0 z-50 flex justify-center px-3 pt-3 sm:px-4" aria-label={t("nav.mainNavigation", "Main navigation")}>
       <div
-        className={`relative mx-auto max-w-7xl overflow-hidden rounded-2xl border transition-all duration-500 ${
-          scrolled || isOpen
-            ? "border-border/60 bg-background/75 shadow-[0_10px_40px_-12px_hsl(var(--primary)/0.35)] backdrop-blur-xl"
-            : "border-white/10 bg-background/30 backdrop-blur-md"
+        className={`relative w-full overflow-hidden rounded-full border transition-all duration-500 lg:w-fit ${
+          overHero
+            ? "border-white/10 bg-[#070d11]/55 backdrop-blur-xl"
+            : scrolled || isOpen
+              ? "border-border/60 bg-background/75 shadow-[0_10px_40px_-12px_hsl(var(--primary)/0.35)] backdrop-blur-xl"
+              : "border-white/10 bg-background/30 backdrop-blur-md"
         }`}
       >
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/60 to-transparent" />
-
-        <div className="flex h-16 items-center justify-between gap-4 px-3 sm:px-5">
-          <Link to="/" className="group flex min-w-0 items-center gap-3" aria-label={`${brandName} – home`}>
-            <div className="min-w-0 leading-tight">
-              <span className="block truncate bg-gradient-primary bg-clip-text text-lg font-bold tracking-tight text-transparent sm:text-xl">
-                {brandName}
-              </span>
-            </div>
+        <div className="flex h-16 items-center justify-between gap-2 px-3 sm:px-4 lg:justify-center lg:gap-3">
+          <Link to="/" className="group flex shrink-0 items-center" aria-label={`${brandName} – home`}>
+            <img
+              src="/logo.png"
+              alt=""
+              className="h-9 w-9 rounded-full object-cover ring-1 ring-white/20 transition-transform group-hover:scale-105"
+            />
           </Link>
 
-          <div className="hidden items-center rounded-full border border-border/50 bg-background/40 p-1 lg:flex">
+          <div className="hidden items-center gap-0.5 lg:flex">
             {navItems.map((item) => {
               const active = isActivePath(item.path);
               return (
@@ -106,14 +110,18 @@ const Navbar = () => {
                   key={item.path}
                   to={item.path}
                   aria-current={active ? "page" : undefined}
-                  className={`relative rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors xl:px-4 ${
-                    active ? "text-primary-foreground" : "text-foreground/70 hover:text-foreground"
+                  className={`relative rounded-full px-3.5 py-2 text-sm font-medium transition-colors xl:px-4 ${
+                    active
+                      ? overHero ? "text-white" : "text-gold-foreground"
+                      : overHero
+                        ? "text-white/70 hover:bg-white/5 hover:text-white"
+                        : "text-foreground/70 hover:bg-accent/60 hover:text-foreground"
                   }`}
                 >
                   {active && (
                     <motion.span
                       layoutId="nav-active-pill"
-                      className="absolute inset-0 rounded-full bg-gradient-primary shadow-glow"
+                      className={`absolute inset-0 rounded-full ${overHero ? "bg-white/10" : "bg-gold"}`}
                       transition={{ type: "spring", stiffness: 380, damping: 32 }}
                     />
                   )}
@@ -126,18 +134,10 @@ const Navbar = () => {
           <div className="flex shrink-0 items-center gap-2">
             {themeToggle}
 
-            <Link
-              to="/contact"
-              className="group hidden items-center gap-1.5 rounded-full bg-gradient-primary px-4 py-2 text-sm font-semibold text-white shadow-glow transition-transform hover:scale-[1.03] sm:flex"
-            >
-              {t("nav.hireMe", "Hire Me")}
-              <ArrowUpRight className="h-4 w-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
-            </Link>
-
             <button
               type="button"
               onClick={() => setIsOpen((prev) => !prev)}
-              className={`${iconButton} lg:hidden`}
+              className={`${iconButtonClass} lg:hidden`}
               aria-label={isOpen ? t("nav.closeMenu", "Close menu") : t("nav.openMenu", "Open menu")}
               aria-expanded={isOpen}
               aria-controls="mobile-nav"
@@ -157,7 +157,7 @@ const Navbar = () => {
               transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
               className="overflow-hidden lg:hidden"
             >
-              <div className="grid grid-cols-2 gap-2 border-t border-border/50 px-3 pb-4 pt-3 sm:grid-cols-4 sm:px-5">
+              <div className={`grid grid-cols-2 gap-2 border-t px-3 pb-4 pt-3 sm:grid-cols-4 sm:px-5 ${overHero ? "border-white/10" : "border-border/50"}`}>
                 {navItems.map((item, i) => {
                   const active = isActivePath(item.path);
                   return (
@@ -172,19 +172,23 @@ const Navbar = () => {
                         aria-current={active ? "page" : undefined}
                         className={`flex items-center justify-between rounded-xl border px-4 py-3 text-sm font-medium transition-colors ${
                           active
-                            ? "border-primary/50 bg-primary/10 text-primary"
-                            : "border-border/50 bg-background/40 text-foreground/80 hover:border-primary/40 hover:text-primary"
+                            ? overHero
+                              ? "border-[#38bdf8]/50 bg-white/10 text-[#38bdf8]"
+                              : "border-gold/50 bg-gold/10 text-gold"
+                            : overHero
+                              ? "border-white/10 bg-white/5 text-white/80 hover:border-[#38bdf8]/40 hover:text-white"
+                              : "border-border/50 bg-background/40 text-foreground/80 hover:border-gold/40 hover:text-gold"
                         }`}
                       >
                         {t(`nav.${item.name.toLowerCase()}`, item.name)}
-                        {active && <span className="h-1.5 w-1.5 rounded-full bg-primary shadow-glow" />}
+                        {active && <span className={`h-1.5 w-1.5 rounded-full ${overHero ? "bg-[#38bdf8]" : "bg-gold shadow-glow"}`} />}
                       </Link>
                     </motion.div>
                   );
                 })}
                 <Link
                   to="/contact"
-                  className="col-span-2 mt-1 flex items-center justify-center gap-2 rounded-xl bg-gradient-primary px-4 py-3 text-sm font-semibold text-white shadow-glow sm:hidden"
+                  className="col-span-2 mt-1 flex items-center justify-center gap-2 rounded-xl bg-gold px-4 py-3 text-sm font-semibold text-gold-foreground shadow-glow sm:hidden"
                 >
                   {t("nav.hireMe", "Hire Me")} <ArrowUpRight className="h-4 w-4" />
                 </Link>

@@ -51,16 +51,7 @@ const Contact = () => {
   }));
 
   return (
-    <section className="py-24 px-4 bg-background relative overflow-hidden" id="contact" ref={ref}>
-
-      {/* Ambient blobs */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <motion.div animate={{ scale:[1,1.1,1], opacity:[0.03,0.07,0.03] }} transition={{ duration:9, repeat:Infinity }}
-          className="absolute -top-40 -right-40 w-[600px] h-[600px] bg-cyan-500 rounded-full blur-[120px]" />
-        <motion.div animate={{ scale:[1,1.15,1], opacity:[0.03,0.06,0.03] }} transition={{ duration:11, repeat:Infinity, delay:3 }}
-          className="absolute -bottom-40 -left-40 w-[700px] h-[700px] bg-violet-500 rounded-full blur-[120px]" />
-      </div>
-
+    <section className="relative overflow-hidden px-4 py-20 sm:py-24" id="contact" ref={ref}>
       <div className="container mx-auto relative z-10">
 
         <SectionHeader
@@ -75,15 +66,10 @@ const Contact = () => {
 
           {/* ── Contact Form ── */}
           <motion.div initial={{ opacity:0, x:-30 }} animate={isInView ? { opacity:1, x:0 } : {}} transition={{ duration:0.6, delay:0.2 }}>
-            <div className="relative rounded-2xl p-8 glass-card border border-border/50 overflow-hidden">
-              {/* Top bar */}
-              <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-cyan-500 to-violet-500" />
-              {/* Glow orb */}
-              <div className="absolute -top-10 -right-10 w-40 h-40 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
-
-              <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
-                <div className="p-2 rounded-lg bg-gradient-to-r from-cyan-500 to-primary">
-                  <Send className="w-4 h-4 text-white" />
+            <div className="relative overflow-hidden rounded-2xl border border-border/70 bg-card/60 p-8 backdrop-blur-sm">
+              <h3 className="text-xl font-bold mb-6 flex items-center gap-2 text-gold">
+                <div className="p-2 rounded-lg bg-gold/10 text-gold">
+                  <Send className="w-4 h-4" />
                 </div>
                 {t("contact.formTitle", "Send a Message")}
               </h3>
@@ -100,7 +86,7 @@ const Contact = () => {
                       <Input name={f.name} type={f.type} value={formData[f.name as keyof typeof formData]}
                         onChange={handleChange} required placeholder={f.placeholder}
                         onFocus={() => setFocused(f.name)} onBlur={() => setFocused(null)}
-                        className={`glass-card border transition-all duration-300 ${focused===f.name ? "border-primary/60 shadow-[0_0_15px_rgba(6,182,212,0.15)]" : "border-border/50"}`} />
+                        className={`border bg-background/40 transition-colors duration-300 ${focused===f.name ? "border-gold/60" : "border-border/60"}`} />
                     </motion.div>
                   ))}
                 </div>
@@ -109,7 +95,7 @@ const Contact = () => {
                   <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t("contact.subject", "Subject")}</label>
                   <Input name="subject" value={formData.subject} onChange={handleChange} required placeholder={t("contact.subjectPlaceholder", "How can I help?")}
                     onFocus={() => setFocused("subject")} onBlur={() => setFocused(null)}
-                    className={`glass-card border transition-all duration-300 ${focused==="subject" ? "border-primary/60 shadow-[0_0_15px_rgba(6,182,212,0.15)]" : "border-border/50"}`} />
+                    className={`border bg-background/40 transition-colors duration-300 ${focused==="subject" ? "border-gold/60" : "border-border/60"}`} />
                 </motion.div>
 
                 <motion.div className="space-y-1.5" animate={{ scale: focused==="message" ? 1.005 : 1 }} transition={{ duration:0.2 }}>
@@ -117,12 +103,12 @@ const Contact = () => {
                   <Textarea name="message" value={formData.message} onChange={handleChange} required
                     placeholder={t("contact.messagePlaceholder", "Tell me about your project...")} rows={5}
                     onFocus={() => setFocused("message")} onBlur={() => setFocused(null)}
-                    className={`glass-card border resize-none transition-all duration-300 ${focused==="message" ? "border-primary/60 shadow-[0_0_15px_rgba(6,182,212,0.15)]" : "border-border/50"}`} />
+                    className={`border bg-background/40 resize-none transition-colors duration-300 ${focused==="message" ? "border-gold/60" : "border-border/60"}`} />
                 </motion.div>
 
                 <motion.div whileHover={{ scale:1.01 }} whileTap={{ scale:0.98 }}>
                   <Button type="submit" disabled={sending}
-                    className="w-full h-12 bg-gradient-to-r from-cyan-500 to-primary hover:opacity-90 shadow-glow gap-2 font-semibold text-white text-base">
+                    className="w-full h-12 bg-gold text-gold-foreground hover:bg-gold/90 gap-2 font-semibold text-base">
                     {sending ? (
                       <motion.div animate={{ rotate:360 }} transition={{ duration:1, repeat:Infinity, ease:"linear" }}>
                         <Sparkles className="w-5 h-5" />
@@ -140,7 +126,7 @@ const Contact = () => {
 
             {/* Availability badge */}
             <motion.div initial={{ opacity:0, y:10 }} animate={isInView ? { opacity:1, y:0 } : {}} transition={{ delay:0.4 }}
-              className="flex items-center gap-3 p-4 glass-card rounded-2xl border border-green-400/20 bg-green-500/5">
+              className="flex items-center gap-3 rounded-2xl border border-green-400/20 bg-green-500/5 p-4">
               <motion.div className="w-3 h-3 rounded-full bg-green-400 flex-shrink-0"
                 animate={{ scale:[1,1.3,1], opacity:[1,0.6,1] }} transition={{ duration:2, repeat:Infinity }} />
               <div>
@@ -155,17 +141,17 @@ const Contact = () => {
                 {contactDetails.map((c, i) => {
                   const body = (
                     <>
-                      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-primary text-white shadow-glow transition-transform group-hover:scale-110">
+                      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-foreground/[0.06] text-gold transition-colors group-hover:text-gold">
                         <c.icon className="h-5 w-5" />
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="block text-xs font-semibold uppercase tracking-wide text-muted-foreground">{c.label}</span>
                         <span className="block truncate font-semibold">{c.value}</span>
                       </span>
-                      {c.href && <ArrowUpRight className="h-4 w-4 text-muted-foreground transition-all group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-primary" />}
+                      {c.href && <ArrowUpRight className="h-4 w-4 text-muted-foreground transition-all group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-gold" />}
                     </>
                   );
-                  const cls = "group flex items-center gap-4 rounded-2xl border border-border/60 bg-card/60 p-4 backdrop-blur-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/40";
+                  const cls = "group flex items-center gap-4 rounded-2xl border border-border/70 bg-card/60 p-4 backdrop-blur-sm transition-colors hover:border-gold/40";
                   return (
                     <motion.div key={c.label} initial={{ opacity:0, y:10 }} animate={isInView ? { opacity:1, y:0 } : {}} transition={{ delay:0.45 + i*0.08 }}>
                       {c.href
@@ -183,7 +169,7 @@ const Contact = () => {
               <motion.div initial={{ opacity:0 }} animate={isInView ? { opacity:1 } : {}} transition={{ delay:0.6 }}
                 className="flex items-center gap-3 mb-4">
                 <div className="h-px flex-1 bg-gradient-to-r from-transparent to-border/50" />
-                <Badge variant="outline" className="text-xs border-primary/30 text-primary px-3">{t("contact.connectWithMe", "Connect With Me")}</Badge>
+                <Badge variant="outline" className="text-xs border-gold/30 text-gold px-3">{t("contact.connectWithMe", "Connect With Me")}</Badge>
                 <div className="h-px flex-1 bg-gradient-to-l from-transparent to-border/50" />
               </motion.div>
 

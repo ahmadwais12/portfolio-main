@@ -25,7 +25,7 @@ const IndexSkeleton = () => (
 );
 
 const Index = () => (
-  <div className="min-h-screen bg-background">
+  <div className="home-shell min-h-screen bg-background">
     <Navbar />
     <PageLoader skeleton={<IndexSkeleton />}>
       <Hero />
